@@ -24,4 +24,17 @@ python main.py --mode ingest --query "chain of thought prompting" --n 10
 python main.py --mode contradict
 python main.py --mode gaps
 python main.py --mode query --query "Does CoT help small models?"
+python main.py --mode query --query "Does CoT help small models?" --v1
 ```
+
+## Streamlit UI
+Run the dashboard to interact with the multi-step coordinator and timeline views:
+```bash
+streamlit run ui/app.py
+```
+
+The UI supports:
+- Multi-step coordinator mode with planner/retriever/reflector/synthesizer loop
+- Raw reasoning trace for v2 answers
+- Temporal consensus evolution and contradiction timeline charts
+- Knowledge graph visualization generated with `pyvis`
