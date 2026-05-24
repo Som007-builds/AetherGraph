@@ -22,7 +22,7 @@ try:
 except Exception as e:
     st.sidebar.warning(f"DB not initialized: {e}")
 
-tab1, tab2, tab3 = st.tabs(["Ask a Question", "Contradictions", "Research Gaps"])
+tab1, tab2, tab3, tab4 = st.tabs(["Ask a Question", "Contradictions", "Research Gaps", "Knowledge Graph"])
 
 with tab1:
     st.subheader("Ask the Coordinator")
@@ -62,3 +62,28 @@ with tab3:
         st.write(f"**→** {g['text']}")
         st.caption(f"Related to {len(g['related_claims'])} claims")
         st.divider()
+
+with tab4:
+    st.subheader("Knowledge Graph")
+    col1, col2 = st.columns([3, 1])
+    with col2:
+        min_conf = st.slider("Min contradiction confidence", 0.0, 1.0, 0.7, 0.05)
+        rebuild = st.button("Rebuild Graph")
+    
+    graph_path = "ui/graph.html"
+    
+    if rebuild:
+        with st.spinner("Building graph..."):
+            import sys, os
+            sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+            from ui.graph_viz import build_graph
+            build_graph(output_path=graph_path, min_confidence=min_conf)
+        st.success("Graph rebuilt!")
+    
+    if os.path.exists(graph_path):
+        with open(graph_path, "r", encoding="utf-8") as f:
+            html = f.read()
+        import streamlit.components.v1 as components
+        components.html(html, height=750, scrolling=False)
+    else:
+        st.info("Click 'Rebuild Graph' to generate the visualization.")
