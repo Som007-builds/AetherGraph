@@ -1,14 +1,18 @@
 import time
-from config import LLM_PROVIDER
+import config
 from config import GROQ_API_KEY, GROQ_MODEL
 from config import GEMINI_API_KEY, GEMINI_MODEL
 from config import ANTHROPIC_API_KEY, CLAUDE_MODEL
 
+if "LLM_PROVIDER" not in globals():
+    LLM_PROVIDER = config.LLM_PROVIDER
+
 
 def call_llm(prompt: str, max_tokens: int = 1500, retries: int = 3) -> str:
+    provider = globals().get("LLM_PROVIDER", config.LLM_PROVIDER)
     for attempt in range(retries):
         try:
-            if LLM_PROVIDER == "groq":
+            if provider == "groq":
                 from groq import Groq
                 client = Groq(api_key=GROQ_API_KEY)
                 response = client.chat.completions.create(

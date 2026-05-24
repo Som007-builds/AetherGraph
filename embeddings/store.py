@@ -16,12 +16,12 @@ claims_col = client.get_or_create_collection("claims", embedding_function=ef)
 
 
 def add_chunk(doc_id: str, text: str, metadata: dict):
-    chunks_col.add(documents=[text], ids=[doc_id], metadatas=[metadata])
+    chunks_col.upsert(documents=[text], ids=[doc_id], metadatas=[metadata])
 
 
 def add_claim(claim_id: int, claim_text: str, metadata: dict) -> str:
     doc_id = f"claim_{claim_id}"
-    claims_col.add(documents=[claim_text], ids=[doc_id], metadatas=[metadata])
+    claims_col.upsert(documents=[claim_text], ids=[doc_id], metadatas=[metadata])
     return doc_id
 
 

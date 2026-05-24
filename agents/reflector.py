@@ -102,6 +102,3 @@ def reflect(question: str, context: dict) -> dict:
 
     result["sufficient"] = result.get("score", 0) >= SUFFICIENCY_THRESHOLD
     return result
-
-    result["sufficient"] = result.get("score", 0) >= SUFFICIENCY_THRESHOLD
-    return result

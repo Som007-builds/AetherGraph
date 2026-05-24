@@ -84,9 +84,11 @@ def run_contradiction_detection():
         similar = find_similar_claims(claim["text"], n_results=8)
 
         for sim in similar:
-            other_claim_id = int(sim["doc_id"].replace("claim_", ""))
+            other_claim_id = sim["doc_id"]
+            if other_claim_id.startswith("claim_"):
+                other_claim_id = other_claim_id[len("claim_"):]
 
-            pair_key = tuple(sorted([claim["id"], other_claim_id]))
+            pair_key = tuple(sorted([str(claim["id"]), str(other_claim_id)]))
             if pair_key in pairs_checked:
                 continue
             pairs_checked.add(pair_key)
@@ -94,7 +96,7 @@ def run_contradiction_detection():
             if sim["distance"] > CONTRADICTION_THRESHOLD:
                 continue
 
-            other_claims = [c for c in all_claims if c["id"] == other_claim_id]
+            other_claims = [c for c in all_claims if str(c["id"]) == other_claim_id]
             if not other_claims:
                 continue
             other_claim = other_claims[0]
