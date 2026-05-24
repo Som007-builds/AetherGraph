@@ -38,12 +38,13 @@ Return ONLY valid JSON, no other text:
 {{
   "gap": "The specific unanswered research question",
   "reasoning": "Why none of the above claims actually answers this",
-  "confidence": 0.0 to 1.0
+  "confidence": 0.0
 }}
 """
 
 
-def extract_future_work_gaps(section_text: str, paper_id: int) -> list[int]:
+def extract_future_work_gaps(section_text: str) -> list[int]:
+    """Mine future work / limitations sections for open questions."""
     if len(section_text.strip()) < 50:
         return []
 
@@ -61,21 +62,27 @@ def extract_future_work_gaps(section_text: str, paper_id: int) -> list[int]:
         for question in data.get("open_questions", []):
             if len(question) < 20:
                 continue
+            # Store with empty related_claim_ids — paper-level gap
             gap_id = insert_gap(
                 gap_text=question,
-                related_claim_ids=[paper_id]
+                related_claim_ids=[]
             )
             gap_ids.append(gap_id)
             print(f"  Gap (future work): {question[:80]}")
     except Exception as e:
-        print(f"  Warning: gap parsing error — {e}")
+        print(f"  Warning: future work gap parsing error — {e}")
 
     return gap_ids
 
 
 def find_cluster_gaps(n_clusters: int = 10) -> list[int]:
+    """
+    For a sample of claims, get their neighbors and ask the LLM
+    what research question the cluster circles but never answers.
+    """
     all_claims = get_all_claims()
     if len(all_claims) < 5:
+        print("  Not enough claims in DB. Run ingestion first.")
         return []
 
     step = max(1, len(all_claims) // n_clusters)
@@ -107,7 +114,9 @@ def find_cluster_gaps(n_clusters: int = 10) -> list[int]:
         try:
             data = json.loads(raw)
             gap_text = data.get("gap", "")
-            if len(gap_text) < 20 or data.get("confidence", 0) < 0.5:
+            confidence = data.get("confidence", 0)
+
+            if len(gap_text) < 20 or confidence < 0.5:
                 continue
 
             gap_id = insert_gap(
@@ -124,6 +133,7 @@ def find_cluster_gaps(n_clusters: int = 10) -> list[int]:
 
 
 def run_gap_finding():
+    """Main entry point for gap finding."""
     total_gaps = 0
 
     print("Finding cluster gaps...")
