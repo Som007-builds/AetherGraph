@@ -6,15 +6,12 @@ Capabilities:
   1. get_claims_by_year_range  — semantic search filtered by year
   2. get_consensus_evolution   — how agreement on a topic changed year by year
   3. get_contradiction_timeline — when disputes appeared and whether they resolved
-
-# TODO: replace with Neo4j query in Phase 4
 """
 
 import json
 from collections import defaultdict
 from llm import call_llm
-from graph.neo4j_queries import get_claims_in_year_range, get_all_claims, get_contradictions
-
+from graph.neo4j_queries import get_all_claims, get_contradictions
 from embeddings.store import find_similar_claims
 
 
@@ -27,26 +24,28 @@ def get_claims_by_year_range(topic: str, year_start: int,
     """
     Semantic search for claims about a topic, filtered to a year range.
     Post-filters ChromaDB results by paper_year metadata.
-    # TODO: replace with Neo4j query in Phase 4
+    paper_year is stored as int after fix_chroma_year_type.py backfill;
+    isinstance guard handles any stragglers.
     """
     raw_results = find_similar_claims(topic, n_results=n_results * 3)
 
     filtered = []
     for r in raw_results:
-        year = r["metadata"].get("paper_year")
-        if year is not None:
+        year = r["metadata"].get("paper_year", 0)
+        # Safety net: convert if a stale string slipped through
+        if isinstance(year, str):
             try:
                 year = int(year)
-                if year_start <= year <= year_end:
-                    filtered.append({
-                        "id": int(r["doc_id"].replace("claim_", "")),
-                        "text": r["text"],
-                        "arxiv_id": r["metadata"].get("arxiv_id", "?"),
-                        "paper_year": year,
-                        "distance": r["distance"]
-                    })
-            except (ValueError, TypeError):
-                continue
+            except ValueError:
+                year = 0
+        if year and year_start <= year <= year_end:
+            filtered.append({
+                "id": r["doc_id"].replace("claim_", ""),
+                "text": r["text"],
+                "arxiv_id": r["metadata"].get("arxiv_id", "?"),
+                "paper_year": year,
+                "distance": r["distance"]
+            })
 
     filtered.sort(key=lambda x: (x["distance"], x["paper_year"]))
     return filtered[:n_results]
@@ -92,14 +91,16 @@ def get_consensus_evolution(topic: str, year_start: int = 2020,
                              year_end: int = 2025) -> dict:
     """
     Traces how the field's consensus on a topic evolved year by year.
-    # TODO: replace with Neo4j query in Phase 4
     """
     claims = get_claims_by_year_range(topic, year_start, year_end, n_results=40)
 
     if len(claims) < 3:
         return {
             "yearly_positions": [],
-            "overall_narrative": f"Not enough claims in the graph about '{topic}' for temporal analysis. Ingest more papers from {year_start}-{year_end}.",
+            "overall_narrative": (
+                f"Not enough claims in the graph about '{topic}' for temporal analysis. "
+                f"Ingest more papers from {year_start}-{year_end}."
+            ),
             "current_status": "insufficient_data",
             "confidence": 0.0
         }
@@ -173,7 +174,6 @@ def get_contradiction_timeline(topic: str) -> dict:
     """
     Finds contradictions related to a topic and analyzes when they appeared
     and whether they have been resolved.
-    # TODO: replace with Neo4j query in Phase 4
     """
     relevant_claims = get_claims_by_year_range(topic, 2019, 2026, n_results=20)
     relevant_ids = {c["id"] for c in relevant_claims}

@@ -4,7 +4,7 @@ Coordinator v2 — Multi-step agentic loop.
 
 Architecture:
   1. Planner: decides what to search for
-  2. Retriever: executes searches against ChromaDB + SQLite
+  2. Retriever: executes searches against ChromaDB + Neo4j
   3. Reflector: evaluates whether context is sufficient
      - If sufficient OR iteration limit hit → Synthesizer
      - If not → refine query, loop back to Retriever
@@ -17,6 +17,7 @@ from agents.planner import make_plan
 from agents.reflector import reflect
 from agents.synthesizer import synthesize, format_report
 from agents.temporal import get_consensus_evolution
+from agents.citation import get_weighted_confidence
 from embeddings.store import find_similar_claims
 from graph.neo4j_queries import get_contradictions, get_gaps
 
@@ -30,26 +31,23 @@ TEMPORAL_KEYWORDS = [
 
 
 def _is_temporal_question(question: str) -> bool:
-    """Heuristic: does this question imply time-awareness?"""
     return any(kw in question.lower() for kw in TEMPORAL_KEYWORDS)
 
 
 def _get_temporal_context(question: str) -> str:
-    """
-    If the question is temporal, get evolution summary to inject into synthesis.
-    Returns a formatted string or empty string if not applicable.
-    """
     if not _is_temporal_question(question):
         return ""
 
     topic = " ".join(question.split()[:6])
-
     try:
         evolution = get_consensus_evolution(topic, year_start=2021, year_end=2025)
         narrative = evolution.get("overall_narrative", "")
         status = evolution.get("current_status", "")
         if narrative:
-            return f"\nTEMPORAL CONTEXT (consensus evolution):\nStatus: {status}\n{narrative}\n"
+            return (
+                f"\nTEMPORAL CONTEXT (consensus evolution):\n"
+                f"Status: {status}\n{narrative}\n"
+            )
     except Exception as e:
         print(f"  [Coordinator v2] Temporal context failed: {e}")
 
@@ -62,22 +60,35 @@ def _retrieve(query: str, fetch_contradictions: bool, fetch_gaps: bool) -> dict:
     claim_ids = set()
 
     for r in raw_claims:
-        claim_id = int(r["doc_id"].replace("claim_", ""))
+        # elementId is a string in Neo4j 5+ — do NOT cast to int
+        claim_id = r["doc_id"].replace("claim_", "")
+
+        base_confidence = 1.0 - float(r.get("distance", 0))
+        weighted = get_weighted_confidence(
+            claim_id=claim_id,
+            base_confidence=base_confidence
+        )
+
         claims.append({
             "id": claim_id,
             "text": r["text"],
             "arxiv_id": r["metadata"].get("arxiv_id", "?"),
             "section": r["metadata"].get("section", "?"),
-            "distance": r["distance"]
+            "distance": r["distance"],
+            "weighted_confidence": weighted
         })
         claim_ids.add(claim_id)
+
+    # Sort by citation-weighted confidence — strongest evidence first
+    claims.sort(key=lambda c: c["weighted_confidence"], reverse=True)
 
     contradictions = []
     if fetch_contradictions:
         all_contradictions = get_contradictions()
         contradictions = [
             c for c in all_contradictions
-            if c.get("claim_a_id") in claim_ids or c.get("claim_b_id") in claim_ids
+            if c.get("claim_a_id") in claim_ids
+            or c.get("claim_b_id") in claim_ids
         ][:6]
 
     gaps = []
@@ -92,9 +103,9 @@ def _retrieve(query: str, fetch_contradictions: bool, fetch_gaps: bool) -> dict:
 
 
 def _merge_contexts(ctx_a: dict, ctx_b: dict) -> dict:
-    seen_claim_ids = {c["id"] for c in ctx_a["claims"]}
+    seen_claim_ids  = {c["id"] for c in ctx_a["claims"]}
     seen_contra_ids = {c.get("id") for c in ctx_a["contradictions"]}
-    seen_gap_ids = {g.get("id") for g in ctx_a["gaps"]}
+    seen_gap_ids    = {g.get("id") for g in ctx_a["gaps"]}
 
     merged_claims = list(ctx_a["claims"])
     for c in ctx_b["claims"]:
@@ -113,6 +124,9 @@ def _merge_contexts(ctx_a: dict, ctx_b: dict) -> dict:
         if g.get("id") not in seen_gap_ids:
             merged_gaps.append(g)
             seen_gap_ids.add(g.get("id"))
+
+    # Re-sort merged claims so highest weighted_confidence stays on top
+    merged_claims.sort(key=lambda c: c.get("weighted_confidence", 0), reverse=True)
 
     return {
         "claims": merged_claims,
@@ -175,6 +189,10 @@ def run(research_question: str, verbose: bool = True) -> dict:
             print(f"  Total context: {len(accumulated_context['claims'])} claims, "
                   f"{len(accumulated_context['contradictions'])} contradictions, "
                   f"{len(accumulated_context['gaps'])} gaps")
+            if accumulated_context["claims"]:
+                top = accumulated_context["claims"][0]
+                print(f"  Top claim (w={top['weighted_confidence']:.3f}): "
+                      f"{top['text'][:70]}...")
 
         # ── Step 3: Reflect ───────────────────────────────────────
         if verbose:
@@ -211,7 +229,7 @@ def run(research_question: str, verbose: bool = True) -> dict:
                 print(f"  → Refining search: '{refined}'")
         else:
             if verbose:
-                print(f"  → No refined query provided. Proceeding anyway.")
+                print(f"  → No refined query. Proceeding to synthesis.")
             break
 
     # ── Optional: temporal context injection ──────────────────────

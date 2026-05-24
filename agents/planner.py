@@ -69,14 +69,23 @@ def make_plan(question: str) -> dict:
                 "reasoning": "fallback: used question directly"
             }
 
-    # Validate and clamp — ensure sub_queries are plain strings not dicts
-    raw_queries = plan.get("sub_queries", [question])[:3]
-    plan["sub_queries"] = [
-        q if isinstance(q, str)
-        else list(q.values())[0] if isinstance(q, dict) and q
-        else str(q)
-        for q in raw_queries
-    ]
+    # Validate and clamp sub_queries — log every non-string case
+    raw_queries = plan.get("sub_queries", [question])
+    cleaned_queries = []
+
+    for q in raw_queries:
+        if isinstance(q, str):
+            cleaned_queries.append(q)
+        elif isinstance(q, dict):
+            extracted = list(q.values())[0] if q else question
+            print(f"  [Planner] ⚠️  Dict sub_query clamped: {q} → '{extracted}'")
+            cleaned_queries.append(str(extracted))
+        else:
+            fallback = str(q)
+            print(f"  [Planner] ⚠️  Unexpected sub_query type {type(q)}: {q} → '{fallback}'")
+            cleaned_queries.append(fallback)
+
+    plan["sub_queries"] = cleaned_queries[:3]
     plan["fetch_contradictions"] = bool(plan.get("fetch_contradictions", True))
     plan["fetch_gaps"] = bool(plan.get("fetch_gaps", True))
 

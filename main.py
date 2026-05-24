@@ -4,7 +4,6 @@ from ingestion.arxiv_client import search_papers, download_pdf
 from agents.reader import process_paper
 from agents.contradiction import run_contradiction_detection
 from agents.gap_finder import run_gap_finding
-from agents.coordinator import run as run_v1, format_report as format_v1
 from agents.coordinator_v2 import run as run_v2
 
 
@@ -18,27 +17,50 @@ def ingest(query: str, n: int):
 
 def main():
     parser = argparse.ArgumentParser(description="SciMesh CLI")
-    parser.add_argument("--mode", choices=["ingest", "contradict", "gaps", "query"], required=True)
+    parser.add_argument(
+        "--mode",
+        choices=["ingest", "contradict", "gaps", "query", "backup", "schedule", "citations"],
+        required=True
+    )
     parser.add_argument("--query", type=str, default="chain of thought prompting LLM")
     parser.add_argument("--n", type=int, default=10)
-    parser.add_argument("--v1", action="store_true", help="Use v1 coordinator (single-pass)")
     args = parser.parse_args()
 
     init_neo4j()
 
     if args.mode == "ingest":
         ingest(args.query, args.n)
+
     elif args.mode == "contradict":
         run_contradiction_detection()
+
     elif args.mode == "gaps":
         run_gap_finding()
+
     elif args.mode == "query":
-        if args.v1:
-            result = run_v1(args.query)
-            print(format_v1(args.query, result))
-        else:
-            output = run_v2(args.query, verbose=True)
-            print(output["report"])
+        output = run_v2(args.query, verbose=True)
+        print(output["report"])
+
+    elif args.mode == "backup":
+        from graph.backup import create_backup, prune_old_backups
+        create_backup()
+        prune_old_backups(keep=7)
+
+    elif args.mode == "schedule":
+        from ingestion.scheduler import start_scheduler, trigger_now, stop_scheduler
+        import time
+        trigger_now()          # run immediately on start
+        start_scheduler()
+        print("Scheduler running. Ctrl+C to stop.")
+        try:
+            while True:
+                time.sleep(60)
+        except KeyboardInterrupt:
+            stop_scheduler()
+
+    elif args.mode == "citations":
+        from agents.citation import update_all_citation_counts
+        update_all_citation_counts()
 
 
 if __name__ == "__main__":

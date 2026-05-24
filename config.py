@@ -4,39 +4,51 @@ from pathlib import Path
 
 load_dotenv()
 
-# API - switch USE_GEMINI to False when you have Claude key
+# ─── LLM ─────────────────────────────────────────────────────
 USE_GEMINI = True
 
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 CLAUDE_MODEL = "claude-sonnet-4-20250514"
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
- 
 GEMINI_MODEL = "gemini-2.0-flash"
-# Paths
+
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+GROQ_MODEL = "llama-3.1-8b-instant"
+
+# Switch: "groq", "gemini", or "claude"
+LLM_PROVIDER = "groq"
+
+# ─── Paths ───────────────────────────────────────────────────
 BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / "data"
 DB_PATH = DATA_DIR / "db" / "scimesh.db"
 PAPERS_DIR = DATA_DIR / "papers"
 CHROMA_DIR = DATA_DIR / "db" / "chroma"
 
-# Embedding settings
+# ─── Embeddings ──────────────────────────────────────────────
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 CHUNK_SIZE = 800
 CHUNK_OVERLAP = 100
 
-# Agent settings
+# ─── Agent settings ──────────────────────────────────────────
 MAX_CLAIMS_PER_PAPER = 8
 CONTRADICTION_THRESHOLD = 0.95
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
- 
-GROQ_MODEL = "llama-3.1-8b-instant"
-# Switch: "groq", "gemini", or "claude"
-LLM_PROVIDER = "groq"
- 
-
-# Neo4j
+# ─── Neo4j ───────────────────────────────────────────────────
 NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
 NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
 NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "scimesh123")
+NEO4J_CONTAINER_NAME = os.getenv("NEO4J_CONTAINER_NAME", "scimesh-neo4j")
+
+# ─── Scheduler ───────────────────────────────────────────────
+SCHEDULER_INTERVAL_HOURS = int(os.getenv("SCHEDULER_INTERVAL_HOURS", "6"))
+SCHEDULER_PAPERS_PER_RUN = int(os.getenv("SCHEDULER_PAPERS_PER_RUN", "5"))
+SCHEDULER_TOPICS = [
+    "chain of thought prompting LLM",
+    "in-context learning large language models",
+    "LLM reasoning benchmark evaluation",
+    "instruction tuning language models",
+    "RLHF reinforcement learning human feedback"
+]
+# Narrow topics surface better papers. Add or change as the graph grows.

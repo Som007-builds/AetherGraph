@@ -43,8 +43,29 @@ Return ONLY valid JSON, no other text:
 """
 
 
-def extract_future_work_gaps(section_text: str) -> list[int]:
-    """Mine future work / limitations sections for open questions."""
+def _resolve_similar_claim_ids(query_text: str, n: int = 5) -> list:
+    """
+    Find n semantically similar claims for a query text.
+    Returns a list of Neo4j element IDs (strings).
+    """
+    similar = find_similar_claims(query_text, n_results=n)
+    ids = []
+    for s in similar:
+        doc_id = s.get("doc_id", "")
+        # doc_id format is "claim_<elementId>" — strip prefix
+        raw_id = doc_id.replace("claim_", "")
+        if raw_id:
+            ids.append(raw_id)
+    return ids
+
+
+def extract_future_work_gaps(section_text: str) -> list:
+    """
+    Mine future work / limitations sections for open questions.
+    Each gap is now auto-linked to the 5 most semantically similar claims
+    in ChromaDB so it surfaces in coordinator filtering.
+    Returns list of gap_ids inserted.
+    """
     if len(section_text.strip()) < 50:
         return []
 
@@ -62,20 +83,25 @@ def extract_future_work_gaps(section_text: str) -> list[int]:
         for question in data.get("open_questions", []):
             if len(question) < 20:
                 continue
-            # Store with empty related_claim_ids — paper-level gap
+
+            # Auto-link to semantically similar claims — fixes empty related_claims
+            related_claim_ids = _resolve_similar_claim_ids(question, n=5)
+
             gap_id = insert_gap(
-                gap_text=question,
-                related_claim_ids=[]
+                text=question,
+                source="future_work",
+                related_claim_ids=related_claim_ids
             )
             gap_ids.append(gap_id)
-            print(f"  Gap (future work): {question[:80]}")
+            print(f"  Gap (future_work, {len(related_claim_ids)} links): {question[:70]}")
+
     except Exception as e:
         print(f"  Warning: future work gap parsing error — {e}")
 
     return gap_ids
 
 
-def find_cluster_gaps(n_clusters: int = 10) -> list[int]:
+def find_cluster_gaps(n_clusters: int = 10) -> list:
     """
     For a sample of claims, get their neighbors and ask the LLM
     what research question the cluster circles but never answers.
@@ -100,8 +126,9 @@ def find_cluster_gaps(n_clusters: int = 10) -> list[int]:
         cluster_claim_ids = []
         for i, n in enumerate(neighbors):
             claims_text += f"{i+1}. [{n['metadata'].get('arxiv_id', '?')}] {n['text']}\n"
-            cid = int(n["doc_id"].replace("claim_", ""))
-            cluster_claim_ids.append(cid)
+            raw_id = n["doc_id"].replace("claim_", "")
+            if raw_id:
+                cluster_claim_ids.append(raw_id)
 
         prompt = CLUSTER_GAP_PROMPT.format(claims=claims_text)
         raw = call_llm(prompt, max_tokens=500)
@@ -120,11 +147,12 @@ def find_cluster_gaps(n_clusters: int = 10) -> list[int]:
                 continue
 
             gap_id = insert_gap(
-                gap_text=gap_text,
+                text=gap_text,
+                source="cluster",
                 related_claim_ids=cluster_claim_ids
             )
             gap_ids.append(gap_id)
-            print(f"  Gap (cluster): {gap_text[:80]}")
+            print(f"  Gap (cluster, {len(cluster_claim_ids)} links): {gap_text[:70]}")
 
         except Exception as e:
             print(f"  Warning: cluster gap error — {e}")
