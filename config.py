@@ -30,7 +30,7 @@ MAX_CLAIMS_PER_PAPER = 8
 CONTRADICTION_THRESHOLD = 0.95
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-GROQ_MODEL = "llama-3.3-70b-versatile"
-
+ 
+GROQ_MODEL = "llama-3.1-8b-instant"
 # Switch: "groq", "gemini", or "claude"
 LLM_PROVIDER = "groq"
