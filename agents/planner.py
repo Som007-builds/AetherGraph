@@ -15,10 +15,17 @@ Your job is to produce a retrieval plan. The system has access to:
 Produce a plan that tells the retriever exactly what to look for.
 
 Rules:
-- Break the question into 1–3 specific sub-queries if it's complex
+- Break the question into 1-3 specific sub-queries if it's complex
+- Each sub-query MUST be a plain string — no dicts, no keys, no JSON objects
 - Decide whether contradictions are relevant (yes if the question is about disagreement, debate, or conflicting results)
-- Decide whether gaps are relevant (yes if the question is about what's unknown, unsolved, or missing)
-- Each sub-query should use different vocabulary from the others — don't repeat the same search
+- Decide whether gaps are relevant (yes if the question is about what is unknown, unsolved, or missing)
+- Each sub-query should use different vocabulary from the others — do not repeat the same search
+
+Example of CORRECT sub_queries:
+["chain of thought prompting small models performance", "reasoning ability limited parameter language models"]
+
+Example of INCORRECT sub_queries (never do this):
+[{{"ChromaDB": "chain_of_thought"}}, {{"key": "value"}}]
 
 Return ONLY valid JSON, no other text:
 {{
@@ -41,8 +48,18 @@ def make_plan(question: str) -> dict:
         plan = json.loads(raw)
     except json.JSONDecodeError:
         start = raw.find("{")
-        if start != -1:
-            plan = json.loads(raw[start:])
+        end = raw.rfind("}") + 1
+        if start != -1 and end > start:
+            try:
+                plan = json.loads(raw[start:end])
+            except json.JSONDecodeError:
+                print("  [Planner] JSON parse failed, using fallback plan")
+                plan = {
+                    "sub_queries": [question],
+                    "fetch_contradictions": True,
+                    "fetch_gaps": True,
+                    "reasoning": "fallback: used question directly"
+                }
         else:
             print("  [Planner] JSON parse failed, using fallback plan")
             plan = {
@@ -52,7 +69,14 @@ def make_plan(question: str) -> dict:
                 "reasoning": "fallback: used question directly"
             }
 
-    plan["sub_queries"] = plan.get("sub_queries", [question])[:3]
+    # Validate and clamp — ensure sub_queries are plain strings not dicts
+    raw_queries = plan.get("sub_queries", [question])[:3]
+    plan["sub_queries"] = [
+        q if isinstance(q, str)
+        else list(q.values())[0] if isinstance(q, dict) and q
+        else str(q)
+        for q in raw_queries
+    ]
     plan["fetch_contradictions"] = bool(plan.get("fetch_contradictions", True))
     plan["fetch_gaps"] = bool(plan.get("fetch_gaps", True))
 
