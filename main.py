@@ -8,7 +8,8 @@ from ingestion.arxiv_client import search_papers, download_pdf
 from agents.reader import process_paper
 from agents.contradiction import run_contradiction_detection
 from agents.gap_finder import run_gap_finding
-from agents.coordinator import run, format_report
+from agents.coordinator import run as run_v1, format_report as format_v1
+from agents.coordinator_v2 import run as run_v2
 
 
 def ingest(query: str, n: int):
@@ -24,6 +25,7 @@ def main():
     parser.add_argument("--mode", choices=["ingest", "contradict", "gaps", "query"], required=True)
     parser.add_argument("--query", type=str, default="chain of thought prompting LLM")
     parser.add_argument("--n", type=int, default=10)
+    parser.add_argument("--v1", action="store_true", help="Use v1 coordinator (single-pass)")
     args = parser.parse_args()
 
     init_db()
@@ -35,8 +37,12 @@ def main():
     elif args.mode == "gaps":
         run_gap_finding()
     elif args.mode == "query":
-        result = run(args.query)
-        print(format_report(args.query, result))
+        if args.v1:
+            result = run_v1(args.query)
+            print(format_v1(args.query, result))
+        else:
+            output = run_v2(args.query, verbose=True)
+            print(output["report"])
 
 
 if __name__ == "__main__":

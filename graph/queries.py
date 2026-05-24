@@ -81,8 +81,6 @@ def insert_gap(gap_text, related_claim_ids, embedding_id=None) -> int:
         return c.lastrowid
     finally:
         conn.close()
-
-
 def get_contradictions() -> list[dict]:
     conn = get_conn()
     c = conn.cursor()
