@@ -1,16 +1,17 @@
+# agents/reader.py
 import json
 from pathlib import Path
 from config import MAX_CLAIMS_PER_PAPER
 from llm import call_llm
 from ingestion.pdf_parser import extract_sections, chunk_text
-from graph.queries import insert_paper, insert_claim
+from graph.neo4j_queries import insert_paper, insert_claim, get_paper_by_arxiv_id
 from embeddings.store import add_claim, add_chunk
 
 EXTRACTION_PROMPT = """You are a research analyst extracting specific, falsifiable claims from an AI/ML research paper.
 
 A GOOD claim is:
 - Specific and measurable: mentions metrics, numbers, model sizes, benchmarks
-- Falsifiable: can be proven true or false with an experiment  
+- Falsifiable: can be proven true or false with an experiment
 - A finding FROM this paper (not background from others)
 
 A BAD claim is:
@@ -50,7 +51,6 @@ def extract_claims_from_section(section_text: str, section_name: str) -> list[di
         data = json.loads(raw)
         return data.get("claims", [])
     except json.JSONDecodeError:
-        # Strip markdown code fences if present
         clean = raw
         if "```" in clean:
             clean = clean.split("```")[1]
@@ -69,20 +69,29 @@ def extract_claims_from_section(section_text: str, section_name: str) -> list[di
 
 def process_paper(paper_meta: dict, pdf_path: Path) -> int:
     """
-    Full pipeline: extract text -> extract claims -> store in graph.
+    Full pipeline: extract text -> extract claims -> store in Neo4j + ChromaDB.
     Returns number of claims extracted.
     """
     print(f"\nProcessing: {paper_meta['title'][:60]}")
 
-    # 1. Store paper in DB
-    paper_id = insert_paper(
+    # Extract paper_year from published date
+    paper_year = None
+    published = paper_meta.get("published", "")
+    if published and len(published) >= 4:
+        try:
+            paper_year = int(published[:4])
+        except ValueError:
+            pass
+
+    # 1. Store paper in Neo4j
+    arxiv_id = insert_paper(
         arxiv_id=paper_meta["arxiv_id"],
         title=paper_meta["title"],
         authors=paper_meta["authors"],
         abstract=paper_meta["abstract"],
-        published=paper_meta["published"]
+        published=published
     )
-    print(f"  Paper ID: {paper_id}")
+    print(f"  ArXiv ID: {arxiv_id}  Year: {paper_year}")
 
     # 2. Extract sections
     sections = extract_sections(pdf_path)
@@ -115,20 +124,22 @@ def process_paper(paper_meta: dict, pdf_path: Path) -> int:
             if not claim_text or len(claim_text) < 20:
                 continue
 
-            # Store in SQLite
+            # Store in Neo4j
             claim_id = insert_claim(
-                paper_id=paper_id,
+                paper_id=arxiv_id,
                 claim_text=claim_text,
                 section=section_name,
-                confidence=raw_claim.get("confidence", 1.0)
+                confidence=raw_claim.get("confidence", 1.0),
+                paper_year=paper_year
             )
 
-            # Store in ChromaDB
+            # Store in ChromaDB with paper_year in metadata
             add_claim(claim_id, claim_text, {
                 "claim_id": str(claim_id),
-                "paper_id": str(paper_id),
+                "paper_id": arxiv_id,
                 "arxiv_id": paper_meta["arxiv_id"],
-                "section": section_name
+                "section": section_name,
+                "paper_year": str(paper_year) if paper_year else ""
             })
 
             claims_extracted += 1

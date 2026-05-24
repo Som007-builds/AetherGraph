@@ -77,9 +77,20 @@ def reflect(question: str, context: dict) -> dict:
     try:
         result = json.loads(raw)
     except json.JSONDecodeError:
+        # Try to find and parse JSON object
         start = raw.find("{")
-        if start != -1:
-            result = json.loads(raw[start:])
+        end = raw.rfind("}") + 1
+        if start != -1 and end > start:
+            try:
+                result = json.loads(raw[start:end])
+            except json.JSONDecodeError:
+                print("  [Reflector] JSON parse failed, defaulting to sufficient")
+                result = {
+                    "score": 7,
+                    "sufficient": True,
+                    "assessment": "parse error — proceeding with available context",
+                    "refined_query": None
+                }
         else:
             print("  [Reflector] JSON parse failed, defaulting to sufficient")
             result = {
@@ -88,6 +99,9 @@ def reflect(question: str, context: dict) -> dict:
                 "assessment": "parse error — proceeding with available context",
                 "refined_query": None
             }
+
+    result["sufficient"] = result.get("score", 0) >= SUFFICIENCY_THRESHOLD
+    return result
 
     result["sufficient"] = result.get("score", 0) >= SUFFICIENCY_THRESHOLD
     return result

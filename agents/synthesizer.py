@@ -81,6 +81,13 @@ def synthesize(question: str, context: dict) -> dict:
         gaps_text=gaps_text
     )
 
+    temporal_note = context.get("temporal_note", "")
+    if temporal_note:
+        prompt += (
+            f"\n\nADDITIONAL TEMPORAL CONTEXT:\n{temporal_note}\n"
+            f"Incorporate this timeline perspective into your consensus and disputed sections."
+        )
+
     raw = call_llm(prompt, max_tokens=2000)
 
     try:

@@ -13,7 +13,8 @@ Capabilities:
 import json
 from collections import defaultdict
 from llm import call_llm
-from graph.queries import get_claims_in_year_range, get_all_claims, get_contradictions
+from graph.neo4j_queries import get_claims_in_year_range, get_all_claims, get_contradictions
+
 from embeddings.store import find_similar_claims
 
 

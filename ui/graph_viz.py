@@ -1,5 +1,5 @@
 from pyvis.network import Network
-from graph.queries import get_all_claims, get_contradictions, get_gaps
+from graph.neo4j_queries import get_all_claims, get_contradictions, get_gaps
 
 
 def build_graph(output_path="ui/graph.html", min_confidence=0.0):

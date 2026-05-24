@@ -16,10 +16,44 @@ Max iterations: 3
 from agents.planner import make_plan
 from agents.reflector import reflect
 from agents.synthesizer import synthesize, format_report
+from agents.temporal import get_consensus_evolution
 from embeddings.store import find_similar_claims
-from graph.queries import get_contradictions, get_gaps
+from graph.neo4j_queries import get_contradictions, get_gaps
 
 MAX_ITERATIONS = 3
+
+TEMPORAL_KEYWORDS = [
+    "changed", "evolved", "shifting", "still", "anymore", "recent",
+    "latest", "trend", "history", "over time", "previously", "used to",
+    "now", "currently", "has", "have", "2023", "2024", "2025"
+]
+
+
+def _is_temporal_question(question: str) -> bool:
+    """Heuristic: does this question imply time-awareness?"""
+    return any(kw in question.lower() for kw in TEMPORAL_KEYWORDS)
+
+
+def _get_temporal_context(question: str) -> str:
+    """
+    If the question is temporal, get evolution summary to inject into synthesis.
+    Returns a formatted string or empty string if not applicable.
+    """
+    if not _is_temporal_question(question):
+        return ""
+
+    topic = " ".join(question.split()[:6])
+
+    try:
+        evolution = get_consensus_evolution(topic, year_start=2021, year_end=2025)
+        narrative = evolution.get("overall_narrative", "")
+        status = evolution.get("current_status", "")
+        if narrative:
+            return f"\nTEMPORAL CONTEXT (consensus evolution):\nStatus: {status}\n{narrative}\n"
+    except Exception as e:
+        print(f"  [Coordinator v2] Temporal context failed: {e}")
+
+    return ""
 
 
 def _retrieve(query: str, fetch_contradictions: bool, fetch_gaps: bool) -> dict:
@@ -179,6 +213,12 @@ def run(research_question: str, verbose: bool = True) -> dict:
             if verbose:
                 print(f"  → No refined query provided. Proceeding anyway.")
             break
+
+    # ── Optional: temporal context injection ──────────────────────
+    temporal_context_str = _get_temporal_context(research_question)
+    if temporal_context_str and verbose:
+        print(f"\n[+] Temporal context injected")
+    accumulated_context["temporal_note"] = temporal_context_str
 
     # ── Step 4: Synthesize ────────────────────────────────────────
     if verbose:

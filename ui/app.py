@@ -5,7 +5,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 import streamlit as st
 from agents.coordinator_v2 import run as run_coordinator
 from agents.coordinator import run as run_v1, format_report as fmt_v1
-from graph.queries import get_contradictions, get_gaps, get_all_claims
+from agents.temporal import get_consensus_evolution, get_contradiction_timeline
+from ui.timeline import build_evolution_chart, build_claims_per_year_bar, build_dispute_timeline
+from graph.neo4j_queries import get_contradictions, get_gaps, get_all_claims
 
 st.set_page_config(page_title="SciMesh", layout="wide")
 st.title("SciMesh - AI Research Knowledge Graph")
@@ -22,11 +24,10 @@ try:
 except Exception as e:
     st.sidebar.warning(f"DB not initialized: {e}")
 
-tab1, tab2, tab3, tab4 = st.tabs(["Ask a Question", "Contradictions", "Research Gaps", "Knowledge Graph"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["Ask a Question", "Contradictions", "Research Gaps", "Timeline", "Knowledge Graph"])
 
 with tab1:
     st.subheader("Ask the Coordinator")
-
     col_q, col_mode = st.columns([4, 1])
     with col_q:
         question = st.text_input(
@@ -57,14 +58,12 @@ with tab1:
                 plan = output["plan"]
                 st.write(f"**Planner strategy:** {plan.get('reasoning', '')}")
                 st.write(f"**Sub-queries:** {', '.join(plan.get('sub_queries', []))}")
-
                 for entry in output.get("reflection_log", []):
                     st.divider()
                     st.write(f"**Iteration {entry['iteration']}** - Score: {entry['score']}/10")
                     st.write(f"Assessment: {entry['assessment']}")
                     if entry.get("refined_query"):
                         st.write(f"Refined query: `{entry['refined_query']}`")
-
                 st.write(f"**Total iterations:** {output['iterations']}")
                 st.write(f"**Answer confidence:** {output['raw'].get('confidence_in_answer', '?')}")
 
@@ -92,11 +91,95 @@ with tab3:
     if not gaps:
         st.info("No gaps yet. Run the gap finder first.")
     for g in gaps[:20]:
-        st.write(f"**-->** {g['text']}")
+        st.write(f"--> {g['text']}")
         st.caption(f"Related to {len(g['related_claims'])} claims")
         st.divider()
 
 with tab4:
+    st.subheader("Temporal Reasoning - How Consensus Shifts Over Time")
+    st.caption("Trace how the field's position on a topic evolved year by year.")
+
+    col_topic, col_years = st.columns([3, 2])
+    with col_topic:
+        timeline_topic = st.text_input(
+            "Topic to trace",
+            placeholder="chain-of-thought prompting small models",
+            key="timeline_topic"
+        )
+    with col_years:
+        year_range = st.slider(
+            "Year range",
+            min_value=2019,
+            max_value=2025,
+            value=(2022, 2025),
+            key="year_slider"
+        )
+
+    if st.button("Analyze Timeline", type="primary") and timeline_topic:
+        year_start, year_end = year_range
+
+        with st.spinner("Tracing consensus evolution..."):
+            evolution = get_consensus_evolution(
+                topic=timeline_topic,
+                year_start=year_start,
+                year_end=year_end
+            )
+
+        status = evolution.get("current_status", "unknown")
+        status_labels = {
+            "settled": "Settled",
+            "active_debate": "Active Debate",
+            "fragmented": "Fragmented",
+            "emerging": "Emerging",
+            "insufficient_data": "Insufficient Data"
+        }
+        st.markdown(f"### {status_labels.get(status, status)}")
+
+        narrative = evolution.get("overall_narrative", "")
+        if narrative:
+            st.info(narrative)
+
+        fig_evolution = build_evolution_chart(evolution, timeline_topic)
+        st.plotly_chart(fig_evolution, use_container_width=True)
+
+        claims_by_year = evolution.get("claims_by_year", {})
+        if claims_by_year:
+            fig_bar = build_claims_per_year_bar(claims_by_year, timeline_topic)
+            st.plotly_chart(fig_bar, use_container_width=True)
+
+        st.divider()
+        st.subheader("Dispute History")
+
+        with st.spinner("Analyzing contradictions over time..."):
+            contra_timeline = get_contradiction_timeline(timeline_topic)
+
+        summary = contra_timeline.get("summary", "")
+        if summary:
+            st.write(summary)
+
+        fig_disputes = build_dispute_timeline(contra_timeline)
+        st.plotly_chart(fig_disputes, use_container_width=True)
+
+        positions = evolution.get("yearly_positions", [])
+        if positions:
+            with st.expander("Year-by-year breakdown"):
+                shift_icons = {
+                    "same": "->",
+                    "strengthened": "^",
+                    "weakened": "v",
+                    "reversed": "~",
+                    "first_appearance": "*"
+                }
+                for p in positions:
+                    icon = shift_icons.get(p.get("shift_from_prior", "same"), ".")
+                    st.write(f"**{p['year']}** {icon} {p['position']}")
+                    if p.get("key_claim_arxiv_ids"):
+                        st.caption(f"Papers: {', '.join(p['key_claim_arxiv_ids'])}")
+
+        with st.expander("Raw temporal data"):
+            st.json({"evolution": evolution, "disputes": contra_timeline})
+
+with tab5:
     st.subheader("Knowledge Graph")
     col1, col2 = st.columns([3, 1])
     with col2:

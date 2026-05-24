@@ -1,6 +1,6 @@
 import json
 from config import CONTRADICTION_THRESHOLD
-from graph.queries import get_all_claims, insert_relationship
+from graph.neo4j_queries import get_all_claims, insert_relationship, get_contradictions
 from embeddings.store import find_similar_claims
 from llm import call_llm
 

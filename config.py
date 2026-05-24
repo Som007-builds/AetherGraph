@@ -34,3 +34,9 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_MODEL = "llama-3.1-8b-instant"
 # Switch: "groq", "gemini", or "claude"
 LLM_PROVIDER = "groq"
+ 
+
+# Neo4j
+NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
+NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
+NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "scimesh123")

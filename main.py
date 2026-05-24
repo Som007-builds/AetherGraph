@@ -1,9 +1,5 @@
-"""
-SciMesh — entry point.
-Usage: python main.py --mode [ingest|contradict|gaps|query]
-"""
 import argparse
-from graph.schema import init_db
+from graph.neo4j_schema import init_neo4j
 from ingestion.arxiv_client import search_papers, download_pdf
 from agents.reader import process_paper
 from agents.contradiction import run_contradiction_detection
@@ -28,7 +24,7 @@ def main():
     parser.add_argument("--v1", action="store_true", help="Use v1 coordinator (single-pass)")
     args = parser.parse_args()
 
-    init_db()
+    init_neo4j()
 
     if args.mode == "ingest":
         ingest(args.query, args.n)

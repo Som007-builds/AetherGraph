@@ -1,5 +1,5 @@
 import json
-from graph.queries import get_all_claims, insert_gap
+from graph.neo4j_queries import get_all_claims, insert_gap, get_gaps
 from embeddings.store import find_similar_claims
 from llm import call_llm
 
