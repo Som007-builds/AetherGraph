@@ -20,27 +20,27 @@
 
 ---
 
-## 🏢 Why Axion Exists
+## Why Axion Exists
 
 Scientific literature in artificial intelligence is expanding at a rate that exceeds human bandwidth. Thousands of preprints are uploaded weekly, making it virtually impossible for researchers to:
-1. **Identify direct contradictions** in empirical results across different evaluation setups.
-2. **Deconstruct papers** into atomic, falsifiable claims rather than narrative summaries.
-3. **Track consensus changes** over time as models and benchmarks evolve.
+1. Identify direct contradictions in empirical results across different evaluation setups.
+2. Deconstruct papers into atomic, falsifiable claims rather than narrative summaries.
+3. Track consensus changes over time as models and benchmarks evolve.
 
-Existing academic search engines and PDF reader systems are built for *document summarization* or *shallow keyword retrieval (RAG)*. They operate on single documents or simple similarity metrics. 
+Existing academic search engines and PDF reader systems are built for document summarization or shallow keyword retrieval (RAG). They operate on single documents or simple similarity metrics. 
 
-**Axion** shifts the paradigm from search to reasoning. By extracting atomic scientific claims into a structured Neo4j knowledge graph and leveraging a network of specialized agents, Axion dynamically identifies contradictions, updates claim confidence scores, proposes research gaps, and designs resolving experiments.
+Axion shifts the paradigm from search to reasoning. By extracting atomic scientific claims into a structured Neo4j knowledge graph and leveraging a network of specialized agents, Axion dynamically identifies contradictions, updates claim confidence scores, proposes research gaps, and designs resolving experiments.
 
 ---
 
-## 🖼️ Interface & Architecture Preview
+## Interface & Architecture Preview
 
 ### Knowledge Graph Visualization
 ```
 [ Placeholder: Knowledge Graph UI ]
 docs/images/knowledge_graph.png
 ```
-*Figure 1: Force-directed knowledge graph displaying Papers (blue), atomic Claims (color-coded by confidence), Research Gaps (violet), and their associated relationships (`EXTRACTED_FROM`, `CONTRADICTS`).*
+*Figure 1: Force-directed knowledge graph displaying Papers (blue), atomic Claims (color-coded by confidence), Research Gaps (violet), and their associated relationships (EXTRACTED_FROM, CONTRADICTS).*
 
 ### Contradiction Detection & Resolving Protocols
 ```
@@ -58,7 +58,7 @@ docs/images/gaps_and_synthesis.png
 
 ---
 
-## ⚡ Core Capabilities
+## Core Capabilities
 
 - **Atomic Claim Extraction:** Extracts falsifiable empirical claims from paper PDFs (via ArXiv), mapping variables, values, and contextual scopes.
 - **Neo4j Semantic Network:** Constructs a directional graph connecting papers, claims, datasets, and author entities.
@@ -70,7 +70,7 @@ docs/images/gaps_and_synthesis.png
 
 ---
 
-## 📐 System Architecture
+## System Architecture
 
 The core pipeline processes raw scientific text into a structured, queryable knowledge graph, exposing it through Next.js and Streamlit analytics interfaces:
 
@@ -120,23 +120,23 @@ The core pipeline processes raw scientific text into a structured, queryable kno
 ### Technical Stack
 * **Vector Database:** ChromaDB for similarity indexing of atomic claims.
 * **Graph Database:** Neo4j 5.x for structural claim relationships.
-* **Embeddings:** HuggingFace `sentence-transformers/all-MiniLM-L6-v2` for lightweight, high-performance semantic retrieval.
+* **Embeddings:** HuggingFace sentence-transformers/all-MiniLM-L6-v2 for lightweight, high-performance semantic retrieval.
 * **Agent Foundations:** Groq (Llama 3.1 70B), Google Gemini 2.0 Flash, and Anthropic Claude 3.5 Sonnet.
 * **Orchestration:** Python-based multi-agent execution loop with asynchronous task management.
 
 ---
 
-## 🔬 Scientific Logic & Output Examples
+## Scientific Logic & Output Examples
 
-### Case Study: *Does chain-of-thought prompting benefit small models?*
+### Case Study: Does chain-of-thought prompting benefit small models?
 
 #### 1. Extracted Contradiction Report
-* **Paper A:** *“Chain-of-thought prompting scales reasoning in models >10B parameters, but degrades performance on smaller networks (<5B) due to token drift.”*
-* **Paper B:** *“By fine-tuning on high-quality step-by-step reasoning tokens, models as small as 1.5B parameters show up to 14% improvement in GSM8k math tasks using chain-of-thought.”*
-* **Analysis:** Semantic contradiction detected on variable `Model Size Bounds` for `CoT Benefits`.
+* **Paper A:** "Chain-of-thought prompting scales reasoning in models >10B parameters, but degrades performance on smaller networks (<5B) due to token drift."
+* **Paper B:** "By fine-tuning on high-quality step-by-step reasoning tokens, models as small as 1.5B parameters show up to 14% improvement in GSM8k math tasks using chain-of-thought."
+* **Analysis:** Semantic contradiction detected on variable "Model Size Bounds" for "CoT Benefits".
 
 #### 2. Generated Research Gap
-* **Gap ID:** `GAP_8829`
+* **Gap ID:** GAP_8829
 * **Topic:** Parameter threshold limits for zero-shot CoT vs. instruction-tuned CoT in math domains.
 * **Context:** Graph identifies a lack of claim nodes addressing whether instruction tuning changes the scaling threshold at which token drift degrades reasoning.
 
@@ -154,7 +154,7 @@ The core pipeline processes raw scientific text into a structured, queryable kno
 
 ---
 
-## 📊 Live System Metrics
+## Live System Metrics
 
 * **Active Papers Ingested:** 9
 * **Atomic Claims Isolated:** 270
@@ -165,10 +165,10 @@ The core pipeline processes raw scientific text into a structured, queryable kno
 
 ---
 
-## 🛣️ Project Roadmap
+## Project Roadmap
 
 - [ ] **Structured Claim Ontology:** Formalize extraction into a strictly typed schema (Variables, Scopes, Bounds, Modalities) instead of text descriptions.
-- [ ] **Contradiction Taxonomy:** Categorize disputes automatically (e.g., *Methodological difference*, *Evaluation metric shift*, *Data distribution skew*).
+- [ ] **Contradiction Taxonomy:** Categorize disputes automatically (e.g., Methodological difference, Evaluation metric shift, Data distribution skew).
 - [ ] **Autonomous Ingestion Daemon:** Continuous ingestion runner reading daily ArXiv RSS feeds matching configured keyword vectors.
 - [ ] **Citation-Weighted Reasoning:** Scale the confidence scores of claims according to their citation counts and publication index.
 - [ ] **Temporal Scientific Tracking:** Trace paradigm shifts and belief changes in the database as new papers challenge older research.
@@ -177,11 +177,11 @@ The core pipeline processes raw scientific text into a structured, queryable kno
 
 ---
 
-## ⚙️ Setup & Verification
+## Setup & Verification
 
 ### Prerequisites
 * **Python:** 3.10+
-* **Node.js:** 18+ and `pnpm`
+* **Node.js:** 18+ and pnpm
 * **Docker:** Installed and running (for Neo4j)
 * **API Keys:** Groq, Gemini, or Anthropic Claude
 
@@ -209,7 +209,7 @@ GROQ_API_KEY=gsk_...
 GEMINI_API_KEY=AIzaSy...
 ANTHROPIC_API_KEY=sk-ant-...
 ```
-Configure your default model provider in [config.py](file:///d:/AI-Projects/schimesh/config.py):
+Configure your default model provider in config.py:
 ```python
 LLM_PROVIDER = "groq" # Or "gemini", "claude"
 ```
@@ -251,6 +251,6 @@ Open http://localhost:3000 to interact with the Axion Scientific Intelligence Da
 
 ---
 
-## 📄 License
+## License
 
-This project is licensed under the MIT License. See [LICENSE](file:///d:/AI-Projects/schimesh/LICENSE) for details.
+This project is licensed under the MIT License. See LICENSE for details.
