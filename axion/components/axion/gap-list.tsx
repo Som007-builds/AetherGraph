@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import useSWR from 'swr'
-import { Lightbulb, Sparkles, Search } from 'lucide-react'
+import { Lightbulb, Sparkles, Search, Link2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -13,46 +13,57 @@ type SourceFilter = 'all' | 'semantic' | 'llm_synthesized'
 
 function GapCard({ gap }: { gap: Gap }) {
   return (
-    <div className="rounded-xl border border-[#292d30] bg-black p-5 space-y-3">
+    <div className={`rounded-xl border axion-surface axion-card-hover p-5 space-y-3 ${
+      gap.source === 'semantic' 
+        ? 'border-l-2 border-l-[#3b82f6] border-[var(--axion-border-subtle)]' 
+        : 'border-l-2 border-l-[#8b5cf6] border-[var(--axion-border-subtle)]'
+    }`}>
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-2">
-          <Lightbulb className="h-5 w-5 text-[#9281f7]" />
+          <Lightbulb className="h-4 w-4 text-[#8b5cf6]" />
           <Badge
             variant="outline"
-            className={`border-[#292d30] bg-transparent ${
+            className={`border-[var(--axion-border-subtle)] bg-transparent ${
               gap.source === 'semantic' 
-                ? 'text-[#70b8ff]' 
-                : 'text-[#baa7ff]'
+                ? 'text-[#60a5fa]' 
+                : 'text-[#a78bfa]'
             }`}
           >
-            {gap.source === 'semantic' ? 'Semantic' : 'LLM Synthesized'}
+            {gap.source === 'semantic' ? (
+              <><Search className="mr-1 h-3 w-3" />Semantic</>
+            ) : (
+              <><Sparkles className="mr-1 h-3 w-3" />LLM Synthesized</>
+            )}
           </Badge>
         </div>
         {gap.confidence !== undefined && (
-          <span className="text-xs text-[#6c6c6c]">
-            {Math.round(gap.confidence * 100)}% confidence
+          <span className="text-xs text-[#475569] font-mono tabular-nums">
+            {Math.round(gap.confidence * 100)}%
           </span>
         )}
       </div>
       
-      <p className="text-[#f0f0f0]">{gap.text}</p>
+      <p className="text-sm text-[#f0f6ff] leading-relaxed">{gap.text}</p>
       
       {gap.related_claims.length > 0 && (
-        <div className="pt-2">
-          <h5 className="mb-2 text-xs font-medium uppercase tracking-wider text-[#6c6c6c]">
-            Related Claims ({gap.related_claims.length})
-          </h5>
-          <div className="flex flex-wrap gap-2">
+        <div className="pt-2 border-t border-[var(--axion-border-subtle)]">
+          <div className="flex items-center gap-1.5 mb-2">
+            <Link2 className="h-3 w-3 text-[#475569]" />
+            <h5 className="text-[10px] font-medium uppercase tracking-wider text-[#475569]">
+              Related Claims ({gap.related_claims.length})
+            </h5>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
             {gap.related_claims.slice(0, 5).map((claimId, i) => (
               <span
                 key={i}
-                className="font-mono text-xs text-[#9281f7] rounded bg-[#9281f7]/10 px-2 py-1"
+                className="font-mono text-[10px] text-[#8b5cf6] rounded-md bg-[#8b5cf6]/8 border border-[#8b5cf6]/15 px-2 py-0.5"
               >
                 {claimId}
               </span>
             ))}
             {gap.related_claims.length > 5 && (
-              <span className="text-xs text-[#6c6c6c]">
+              <span className="text-[10px] text-[#334155] px-1">
                 +{gap.related_claims.length - 5} more
               </span>
             )}
@@ -65,13 +76,13 @@ function GapCard({ gap }: { gap: Gap }) {
 
 function GapSkeleton() {
   return (
-    <div className="rounded-xl border border-[#292d30] bg-black p-5 space-y-3">
+    <div className="rounded-xl border border-[var(--axion-border-subtle)] axion-surface p-5 space-y-3">
       <div className="flex items-center gap-3">
-        <Skeleton className="h-5 w-5 bg-[#1b1b1b]" />
-        <Skeleton className="h-5 w-24 bg-[#1b1b1b]" />
+        <div className="animate-shimmer h-5 w-5 rounded" />
+        <div className="animate-shimmer h-5 w-24 rounded" />
       </div>
-      <Skeleton className="h-4 w-full bg-[#1b1b1b]" />
-      <Skeleton className="h-4 w-4/5 bg-[#1b1b1b]" />
+      <div className="animate-shimmer h-4 w-full rounded" />
+      <div className="animate-shimmer h-4 w-4/5 rounded" />
     </div>
   )
 }
@@ -86,25 +97,25 @@ export function GapList() {
   )
 
   const filterButtons: { value: SourceFilter; label: string; icon: React.ReactNode }[] = [
-    { value: 'all', label: 'All', icon: <Search className="h-4 w-4" /> },
-    { value: 'semantic', label: 'Semantic', icon: <Search className="h-4 w-4" /> },
-    { value: 'llm_synthesized', label: 'LLM Synthesized', icon: <Sparkles className="h-4 w-4" /> },
+    { value: 'all', label: 'All', icon: <Search className="h-3.5 w-3.5" /> },
+    { value: 'semantic', label: 'Semantic', icon: <Search className="h-3.5 w-3.5" /> },
+    { value: 'llm_synthesized', label: 'LLM Synthesized', icon: <Sparkles className="h-3.5 w-3.5" /> },
   ]
 
   return (
     <div className="space-y-6">
       {/* Filter */}
-      <div className="flex items-center gap-2 rounded-xl border border-[#292d30] bg-black p-2">
+      <div className="flex items-center gap-1 rounded-xl border border-[var(--axion-border-subtle)] axion-surface p-1.5">
         {filterButtons.map((btn) => (
           <Button
             key={btn.value}
             variant="ghost"
             size="sm"
             onClick={() => setSourceFilter(btn.value)}
-            className={`${
+            className={`rounded-lg transition-all duration-150 ${
               sourceFilter === btn.value
-                ? 'bg-[#1b1b1b] text-[#f0f0f0]'
-                : 'text-[#6c6c6c] hover:text-[#a1a4a5]'
+                ? 'bg-[rgba(59,130,246,0.08)] text-[#f0f6ff]'
+                : 'text-[#475569] hover:text-[#94a3b8] hover:bg-[rgba(59,130,246,0.04)]'
             }`}
           >
             {btn.icon}
@@ -115,8 +126,8 @@ export function GapList() {
 
       {/* Error state */}
       {error && (
-        <div className="rounded-xl border border-[#ff9592]/30 bg-[#ff9592]/5 p-4">
-          <p className="text-sm text-[#ff9592]">
+        <div className="rounded-xl border border-[#f43f5e]/20 bg-[#f43f5e]/5 p-4">
+          <p className="text-sm text-[#f43f5e]">
             Failed to load research gaps. Is the API running?
           </p>
         </div>
@@ -135,19 +146,19 @@ export function GapList() {
       {data && !isLoading && (
         <>
           <div className="flex items-center justify-between">
-            <p className="text-sm text-[#6c6c6c]">
-              {data.total} research gap{data.total !== 1 ? 's' : ''} found
+            <p className="text-sm text-[#475569]">
+              {data.total} research gap{data.total !== 1 ? 's' : ''} identified
             </p>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-4 stagger-children">
             {data.gaps.map((gap) => (
               <GapCard key={gap.id} gap={gap} />
             ))}
           </div>
           {data.gaps.length === 0 && (
-            <div className="rounded-xl border border-[#292d30] bg-black p-8 text-center">
-              <Lightbulb className="mx-auto h-8 w-8 text-[#6c6c6c]" />
-              <p className="mt-3 text-[#a1a4a5]">
+            <div className="rounded-xl border border-[var(--axion-border-subtle)] axion-surface p-8 text-center">
+              <Lightbulb className="mx-auto h-8 w-8 text-[#334155]" />
+              <p className="mt-3 text-[#94a3b8]">
                 No research gaps found with the current filter
               </p>
             </div>

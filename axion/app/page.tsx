@@ -1,121 +1,167 @@
+'use client'
+
+import { useState, useCallback, useEffect } from 'react'
+import { NavRail, type AxionView } from '@/components/axion/nav-rail'
+import { CommandBar } from '@/components/axion/command-bar'
+import { StatusBar } from '@/components/axion/status-bar'
 import { DashboardStats } from '@/components/axion/dashboard-stats'
-import { IngestionStatus } from '@/components/axion/ingestion-status'
 import { QueryPanel } from '@/components/axion/query-panel'
 import { ContradictionList } from '@/components/axion/contradiction-list'
 import { GapList } from '@/components/axion/gap-list'
 import { TimelineView } from '@/components/axion/timeline-view'
 import { GraphEvolution } from '@/components/axion/graph-evolution'
 import { KnowledgeGraph } from '@/components/axion/knowledge-graph'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { MessageSquare, AlertTriangle, Lightbulb, Calendar, TrendingUp, Network } from 'lucide-react'
+import { IngestionStatus } from '@/components/axion/ingestion-status'
 
-export default function AxionDashboard() {
+const VIEW_TITLES: Record<AxionView, string> = {
+  'query': 'Research Intelligence',
+  'knowledge-graph': 'Knowledge Graph',
+  'contradictions': 'Contradictions',
+  'gaps': 'Research Gaps',
+  'timeline': 'Timeline',
+  'evolution': 'Graph Evolution',
+}
+
+const VIEW_DESCRIPTIONS: Record<AxionView, string> = {
+  'query': 'Ask questions across your scientific knowledge graph',
+  'knowledge-graph': 'Explore the interconnected network of papers, claims, and gaps',
+  'contradictions': 'Detected conflicts between research claims',
+  'gaps': 'Unexplored areas and missing connections in the literature',
+  'timeline': 'Track how scientific consensus evolves over time',
+  'evolution': 'Confidence distribution and claim drift analysis',
+}
+
+export default function AxionWorkspace() {
+  const [activeView, setActiveView] = useState<AxionView>('query')
+  const [ingestionOpen, setIngestionOpen] = useState(false)
+  const [commandQuery, setCommandQuery] = useState<string | null>(null)
+  const [recentQueries, setRecentQueries] = useState<string[]>([])
+  const [queryPanelLoading, setQueryPanelLoading] = useState(false)
+
+  // Load recent queries from local storage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('axion-query-history')
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed)) {
+          setRecentQueries(parsed.map((item: { question?: string }) => item.question).filter(Boolean).slice(0, 10))
+        }
+      }
+    } catch {}
+  }, [])
+
+  const handleCommandSubmit = useCallback((query: string) => {
+    setActiveView('query')
+    setCommandQuery(query)
+  }, [])
+
+  // Keyboard shortcuts for nav
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      // Don't trigger shortcuts when typing in inputs
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+
+      const views: AxionView[] = ['query', 'knowledge-graph', 'contradictions', 'gaps', 'timeline', 'evolution']
+      const num = parseInt(e.key)
+      if (num >= 1 && num <= 6) {
+        setActiveView(views[num - 1])
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
   return (
-    <div className="min-h-screen bg-black">
-      {/* Header */}
-      <header className="border-b border-[#292d30] bg-black">
-        <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#3b9eff]/10 border border-[#3b9eff]/30">
-              <span className="font-mono text-sm font-bold text-[#3b9eff]">A</span>
-            </div>
+    <div className="flex h-screen w-screen overflow-hidden bg-black">
+      {/* Navigation Rail */}
+      <NavRail
+        activeView={activeView}
+        onViewChange={setActiveView}
+        onIngestionClick={() => setIngestionOpen(true)}
+      />
+
+      {/* Main Content Area */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Top Bar: Command Bar + View Title */}
+        <header className="flex shrink-0 flex-col gap-4 border-b border-[var(--axion-border-subtle)] bg-black px-6 py-4">
+          {/* Command Bar */}
+          <CommandBar
+            onSubmit={handleCommandSubmit}
+            recentQueries={recentQueries}
+            isLoading={queryPanelLoading}
+          />
+
+          {/* View Header */}
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-lg font-semibold text-[#f0f0f0]">Axion</h1>
-              <p className="text-xs text-[#6c6c6c]">AI Research Knowledge Graph</p>
+              <h1 className="text-lg font-semibold text-[#f0f6ff]">
+                {VIEW_TITLES[activeView]}
+              </h1>
+              <p className="text-xs text-[#475569]">
+                {VIEW_DESCRIPTIONS[activeView]}
+              </p>
             </div>
+
+            {/* Stats (compact, inline) */}
+            {activeView === 'query' && <DashboardStats />}
           </div>
-          <IngestionStatus />
-        </div>
-      </header>
+        </header>
 
-      {/* Main content */}
-      <main className="mx-auto max-w-[1200px] px-6 py-8">
-        {/* Stats bar */}
-        <section className="mb-8">
-          <DashboardStats />
-        </section>
+        {/* Active View Content */}
+        <main className="flex-1 overflow-auto">
+          <div key={activeView} className="h-full animate-fade-up">
+            {activeView === 'query' && (
+              <div className="mx-auto max-w-[1100px] px-6 py-6">
+                <QueryPanel
+                  externalQuery={commandQuery}
+                  onQueryClear={() => setCommandQuery(null)}
+                  onLoadingChange={setQueryPanelLoading}
+                />
+              </div>
+            )}
 
-        {/* Tab navigation */}
-        <Tabs defaultValue="query" className="space-y-6">
-          <TabsList className="h-auto w-full justify-start gap-1 rounded-xl border border-[#292d30] bg-black p-2">
-            <TabsTrigger
-              value="query"
-              className="rounded-lg border-0 bg-transparent px-4 py-2 text-[#a1a4a5] data-[state=active]:bg-[#1b1b1b] data-[state=active]:text-[#f0f0f0] data-[state=active]:shadow-none"
-            >
-              <MessageSquare className="h-4 w-4" />
-              <span>Ask a Question</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="contradictions"
-              className="rounded-lg border-0 bg-transparent px-4 py-2 text-[#a1a4a5] data-[state=active]:bg-[#1b1b1b] data-[state=active]:text-[#f0f0f0] data-[state=active]:shadow-none"
-            >
-              <AlertTriangle className="h-4 w-4" />
-              <span>Contradictions</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="gaps"
-              className="rounded-lg border-0 bg-transparent px-4 py-2 text-[#a1a4a5] data-[state=active]:bg-[#1b1b1b] data-[state=active]:text-[#f0f0f0] data-[state=active]:shadow-none"
-            >
-              <Lightbulb className="h-4 w-4" />
-              <span>Research Gaps</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="timeline"
-              className="rounded-lg border-0 bg-transparent px-4 py-2 text-[#a1a4a5] data-[state=active]:bg-[#1b1b1b] data-[state=active]:text-[#f0f0f0] data-[state=active]:shadow-none"
-            >
-              <Calendar className="h-4 w-4" />
-              <span>Timeline</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="evolution"
-              className="rounded-lg border-0 bg-transparent px-4 py-2 text-[#a1a4a5] data-[state=active]:bg-[#1b1b1b] data-[state=active]:text-[#f0f0f0] data-[state=active]:shadow-none"
-            >
-              <TrendingUp className="h-4 w-4" />
-              <span>Graph Evolution</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="knowledge-graph"
-              className="rounded-lg border-0 bg-transparent px-4 py-2 text-[#a1a4a5] data-[state=active]:bg-[#1b1b1b] data-[state=active]:text-[#f0f0f0] data-[state=active]:shadow-none"
-            >
-              <Network className="h-4 w-4" />
-              <span>Knowledge Graph</span>
-            </TabsTrigger>
-          </TabsList>
+            {activeView === 'knowledge-graph' && (
+              <div className="h-full">
+                <KnowledgeGraph />
+              </div>
+            )}
 
-          <TabsContent value="query" className="mt-0">
-            <QueryPanel />
-          </TabsContent>
+            {activeView === 'contradictions' && (
+              <div className="mx-auto max-w-[1100px] px-6 py-6">
+                <ContradictionList />
+              </div>
+            )}
 
-          <TabsContent value="contradictions" className="mt-0">
-            <ContradictionList />
-          </TabsContent>
+            {activeView === 'gaps' && (
+              <div className="mx-auto max-w-[1100px] px-6 py-6">
+                <GapList />
+              </div>
+            )}
 
-          <TabsContent value="gaps" className="mt-0">
-            <GapList />
-          </TabsContent>
+            {activeView === 'timeline' && (
+              <div className="mx-auto max-w-[1100px] px-6 py-6">
+                <TimelineView />
+              </div>
+            )}
 
-          <TabsContent value="timeline" className="mt-0">
-            <TimelineView />
-          </TabsContent>
+            {activeView === 'evolution' && (
+              <div className="mx-auto max-w-[1100px] px-6 py-6">
+                <GraphEvolution />
+              </div>
+            )}
+          </div>
+        </main>
 
-          <TabsContent value="evolution" className="mt-0">
-            <GraphEvolution />
-          </TabsContent>
+        {/* Status Bar */}
+        <StatusBar />
+      </div>
 
-          <TabsContent value="knowledge-graph" className="mt-0">
-            <KnowledgeGraph />
-          </TabsContent>
-        </Tabs>
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-[#292d30] bg-black py-6">
-        <div className="mx-auto max-w-[1200px] px-6">
-          <p className="text-center text-xs text-[#6c6c6c]">
-            Axion v7.0 — AI-powered research knowledge graph
-          </p>
-        </div>
-      </footer>
+      {/* Ingestion Side Panel (Sheet) */}
+      <IngestionStatus
+        externalOpen={ingestionOpen}
+        onExternalClose={() => setIngestionOpen(false)}
+      />
     </div>
   )
 }

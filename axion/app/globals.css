@@ -3,109 +3,122 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Resend-inspired SciMesh theme - always dark */
+/* ═══════════════════════════════════════════════════════════════════════════
+   AXION — Scientific Intelligence System
+   Design System v2.0
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 :root {
-  /* Surfaces */
+  /* ─── Surfaces ─────────────────────────────────────────────────────── */
   --background: #000000;
-  --foreground: #f0f0f0;
-  --card: #0b0e14;
-  --card-foreground: #f0f0f0;
-  --popover: #0b0e14;
-  --popover-foreground: #f0f0f0;
-  
-  /* Primary action - electric blue (outline only) */
-  --primary: #3b9eff;
+  --foreground: #f0f6ff;
+  --card: #060a12;
+  --card-foreground: #f0f6ff;
+  --popover: #060a12;
+  --popover-foreground: #f0f6ff;
+
+  /* ─── Primary (Cold Sapphire) ──────────────────────────────────────── */
+  --primary: #3b82f6;
   --primary-foreground: #ffffff;
-  
-  /* Secondary - ghost style */
+
+  /* ─── Secondary (Ghost) ────────────────────────────────────────────── */
   --secondary: transparent;
-  --secondary-foreground: #a1a4a5;
-  
-  /* Muted text */
-  --muted: #1b1b1b;
-  --muted-foreground: #6c6c6c;
-  
-  /* Accent */
-  --accent: #1b1b1b;
-  --accent-foreground: #f0f0f0;
-  
-  /* Destructive / Errors - soft red */
-  --destructive: #ff9592;
-  --destructive-foreground: #ff9592;
-  
-  /* Borders - hairline gray */
-  --border: #292d30;
-  --input: #292d30;
-  --ring: #3b9eff;
-  
-  /* Status colors for data visualization */
-  --status-success: #3ad389;
-  --status-warning: #ffca16;
-  --status-error: #ff9592;
-  --status-info: #70b8ff;
-  --status-violet: #9281f7;
-  --status-lavender: #baa7ff;
-  
-  /* Charts */
-  --chart-1: #3ad389;
-  --chart-2: #70b8ff;
-  --chart-3: #9281f7;
-  --chart-4: #ffca16;
-  --chart-5: #ff9592;
-  
-  /* Radius */
-  --radius: 0.375rem;
-  
-  /* Sidebar */
+  --secondary-foreground: #94a3b8;
+
+  /* ─── Muted ────────────────────────────────────────────────────────── */
+  --muted: #0f1318;
+  --muted-foreground: #475569;
+
+  /* ─── Accent ───────────────────────────────────────────────────────── */
+  --accent: #0f1318;
+  --accent-foreground: #f0f6ff;
+
+  /* ─── Destructive / Errors ─────────────────────────────────────────── */
+  --destructive: #f43f5e;
+  --destructive-foreground: #f43f5e;
+
+  /* ─── Borders ──────────────────────────────────────────────────────── */
+  --border: #1e293b;
+  --input: #1e293b;
+  --ring: #3b82f6;
+
+  /* ─── Semantic Status ──────────────────────────────────────────────── */
+  --axion-success: #10b981;
+  --axion-warning: #f59e0b;
+  --axion-error: #f43f5e;
+  --axion-info: #3b82f6;
+  --axion-violet: #8b5cf6;
+  --axion-cyan: #06b6d4;
+
+  /* ─── Charts ───────────────────────────────────────────────────────── */
+  --chart-1: #10b981;
+  --chart-2: #3b82f6;
+  --chart-3: #8b5cf6;
+  --chart-4: #f59e0b;
+  --chart-5: #f43f5e;
+
+  /* ─── Radius ───────────────────────────────────────────────────────── */
+  --radius: 0.5rem;
+
+  /* ─── Sidebar ──────────────────────────────────────────────────────── */
   --sidebar: #000000;
-  --sidebar-foreground: #f0f0f0;
-  --sidebar-primary: #3b9eff;
+  --sidebar-foreground: #f0f6ff;
+  --sidebar-primary: #3b82f6;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1b1b1b;
-  --sidebar-accent-foreground: #f0f0f0;
-  --sidebar-border: #292d30;
-  --sidebar-ring: #3b9eff;
+  --sidebar-accent: #0f1318;
+  --sidebar-accent-foreground: #f0f6ff;
+  --sidebar-border: #1e293b;
+  --sidebar-ring: #3b82f6;
+
+  /* ─── AXION Specific ───────────────────────────────────────────────── */
+  --axion-surface-1: #050810;
+  --axion-surface-2: #0a0f1a;
+  --axion-surface-3: #111827;
+  --axion-glow: rgba(59, 130, 246, 0.15);
+  --axion-glow-strong: rgba(59, 130, 246, 0.3);
+  --axion-border-subtle: rgba(30, 41, 59, 0.5);
+  --axion-border-glow: rgba(59, 130, 246, 0.2);
 }
 
 /* Dark mode is always active */
 .dark {
   --background: #000000;
-  --foreground: #f0f0f0;
-  --card: #0b0e14;
-  --card-foreground: #f0f0f0;
-  --popover: #0b0e14;
-  --popover-foreground: #f0f0f0;
-  --primary: #3b9eff;
+  --foreground: #f0f6ff;
+  --card: #060a12;
+  --card-foreground: #f0f6ff;
+  --popover: #060a12;
+  --popover-foreground: #f0f6ff;
+  --primary: #3b82f6;
   --primary-foreground: #ffffff;
   --secondary: transparent;
-  --secondary-foreground: #a1a4a5;
-  --muted: #1b1b1b;
-  --muted-foreground: #6c6c6c;
-  --accent: #1b1b1b;
-  --accent-foreground: #f0f0f0;
-  --destructive: #ff9592;
-  --destructive-foreground: #ff9592;
-  --border: #292d30;
-  --input: #292d30;
-  --ring: #3b9eff;
-  --chart-1: #3ad389;
-  --chart-2: #70b8ff;
-  --chart-3: #9281f7;
-  --chart-4: #ffca16;
-  --chart-5: #ff9592;
+  --secondary-foreground: #94a3b8;
+  --muted: #0f1318;
+  --muted-foreground: #475569;
+  --accent: #0f1318;
+  --accent-foreground: #f0f6ff;
+  --destructive: #f43f5e;
+  --destructive-foreground: #f43f5e;
+  --border: #1e293b;
+  --input: #1e293b;
+  --ring: #3b82f6;
+  --chart-1: #10b981;
+  --chart-2: #3b82f6;
+  --chart-3: #8b5cf6;
+  --chart-4: #f59e0b;
+  --chart-5: #f43f5e;
   --sidebar: #000000;
-  --sidebar-foreground: #f0f0f0;
-  --sidebar-primary: #3b9eff;
+  --sidebar-foreground: #f0f6ff;
+  --sidebar-primary: #3b82f6;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1b1b1b;
-  --sidebar-accent-foreground: #f0f0f0;
-  --sidebar-border: #292d30;
-  --sidebar-ring: #3b9eff;
+  --sidebar-accent: #0f1318;
+  --sidebar-accent-foreground: #f0f6ff;
+  --sidebar-border: #1e293b;
+  --sidebar-ring: #3b82f6;
 }
 
 @theme inline {
-  --font-sans: 'Inter', 'Geist', 'Geist Fallback', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', 'Geist Mono', 'Geist Mono Fallback', monospace;
+  --font-sans: var(--font-inter), 'Inter', system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), 'JetBrains Mono', 'Fira Code', monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -142,15 +155,11 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  
-  /* Custom status colors */
-  --color-status-success: var(--status-success);
-  --color-status-warning: var(--status-warning);
-  --color-status-error: var(--status-error);
-  --color-status-info: var(--status-info);
-  --color-status-violet: var(--status-violet);
-  --color-status-lavender: var(--status-lavender);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Base Layer
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 @layer base {
   * {
@@ -158,58 +167,274 @@
   }
   body {
     @apply bg-background text-foreground;
+    overflow: hidden;
+  }
+
+  /* ─── Custom Scrollbar ─────────────────────────────────────────────── */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(59, 130, 246, 0.15);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(59, 130, 246, 0.3);
+  }
+
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(59, 130, 246, 0.15) transparent;
   }
 }
 
-/* Custom utility classes for SciMesh */
+/* ═══════════════════════════════════════════════════════════════════════════
+   AXION Utility Classes
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
-  
-  /* Confidence level colors */
+
+  /* ─── Glassmorphic Surfaces ────────────────────────────────────────── */
+  .axion-glass {
+    background: rgba(6, 10, 18, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--axion-border-subtle);
+  }
+
+  .axion-glass-strong {
+    background: rgba(6, 10, 18, 0.85);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--axion-border-subtle);
+  }
+
+  .axion-surface {
+    background: var(--axion-surface-1);
+    border: 1px solid var(--axion-border-subtle);
+  }
+
+  .axion-surface-raised {
+    background: var(--axion-surface-2);
+    border: 1px solid var(--axion-border-subtle);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  }
+
+  /* ─── Glow Effects ─────────────────────────────────────────────────── */
+  .axion-glow {
+    box-shadow: 0 0 20px var(--axion-glow), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  }
+
+  .axion-glow-border {
+    border-color: var(--axion-border-glow);
+    box-shadow: 0 0 12px var(--axion-glow);
+  }
+
+  .axion-inner-glow {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), inset 0 0 20px rgba(59, 130, 246, 0.03);
+  }
+
+  /* ─── Gradient Text ────────────────────────────────────────────────── */
+  .axion-gradient-text {
+    background: linear-gradient(135deg, #3b82f6, #06b6d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .axion-gradient-text-subtle {
+    background: linear-gradient(135deg, #f0f6ff, #94a3b8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ─── Confidence Level Colors ──────────────────────────────────────── */
   .confidence-high {
-    color: var(--status-success);
+    color: var(--axion-success);
   }
   .confidence-medium {
-    color: var(--status-warning);
+    color: var(--axion-warning);
   }
   .confidence-low {
-    color: var(--status-error);
+    color: var(--axion-error);
   }
-  
-  /* Card with gradient overlay */
-  .card-gradient {
-    background: linear-gradient(180deg, #1b1b1b 0%, #030303 100%);
+
+  /* ─── Card Hover Lift ──────────────────────────────────────────────── */
+  .axion-card-hover {
+    transition: transform 150ms ease-out, box-shadow 150ms ease-out, border-color 150ms ease-out;
   }
-  
-  /* Hairline border utility */
-  .border-hairline {
-    border-width: 1px;
-    border-color: var(--border);
+  .axion-card-hover:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    border-color: rgba(59, 130, 246, 0.15);
   }
-  
-  /* Primary button outline style */
+
+  /* ─── Interactive Element Transition ───────────────────────────────── */
+  .axion-interactive {
+    transition: all 150ms ease-out;
+  }
+  .axion-interactive:hover {
+    background: rgba(59, 130, 246, 0.06);
+  }
+
+  /* ─── Primary Button Outline ───────────────────────────────────────── */
   .btn-primary-outline {
     background: transparent;
     border: 1px solid var(--primary);
     color: white;
+    transition: all 150ms ease-out;
   }
   .btn-primary-outline:hover {
-    box-shadow: 0 0 12px rgba(59, 158, 255, 0.3);
+    box-shadow: 0 0 16px rgba(59, 130, 246, 0.25);
+    background: rgba(59, 130, 246, 0.06);
   }
-  
-  /* Pulsing indicator for active ingestion */
-  .pulse-active {
-    animation: pulse-glow 2s ease-in-out infinite;
+
+  /* ─── Nav Rail Active Indicator ────────────────────────────────────── */
+  .nav-active-indicator {
+    position: relative;
   }
-  
-  @keyframes pulse-glow {
-    0%, 100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.5;
-    }
+  .nav-active-indicator::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2px;
+    height: 24px;
+    background: linear-gradient(180deg, #3b82f6, #06b6d4);
+    border-radius: 0 2px 2px 0;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Animations
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Glow Pulse — for live data indicators */
+@keyframes axion-glow-pulse {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 8px var(--axion-glow);
+  }
+  50% {
+    opacity: 0.7;
+    box-shadow: 0 0 16px var(--axion-glow-strong);
+  }
+}
+
+.animate-glow-pulse {
+  animation: axion-glow-pulse 2.5s ease-in-out infinite;
+}
+
+/* Fade Up — for page transitions */
+@keyframes axion-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: axion-fade-up 300ms ease-out forwards;
+}
+
+/* Slide In — for panels */
+@keyframes axion-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in {
+  animation: axion-slide-in 250ms ease-out forwards;
+}
+
+/* Shimmer — for loading skeletons */
+@keyframes axion-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--axion-surface-1) 0%,
+    var(--axion-surface-2) 40%,
+    rgba(59, 130, 246, 0.05) 50%,
+    var(--axion-surface-2) 60%,
+    var(--axion-surface-1) 100%
+  );
+  background-size: 200% 100%;
+  animation: axion-shimmer 2s ease-in-out infinite;
+}
+
+/* Gradient Shift — for accent borders */
+@keyframes axion-gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient-shift {
+  background-size: 200% 200%;
+  animation: axion-gradient-shift 4s ease-in-out infinite;
+}
+
+/* Stagger children — for list animations */
+.stagger-children > * {
+  opacity: 0;
+  animation: axion-fade-up 300ms ease-out forwards;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 50ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 100ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 150ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 200ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 250ms; }
+.stagger-children > *:nth-child(7) { animation-delay: 300ms; }
+.stagger-children > *:nth-child(8) { animation-delay: 350ms; }
+
+/* Status dot pulse */
+@keyframes status-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0.5; }
+}
+
+.animate-status-pulse {
+  animation: status-pulse 2s ease-in-out infinite;
+}
+
+/* Count up number animation helper */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Pulse active — for ingestion */
+.pulse-active {
+  animation: axion-glow-pulse 2s ease-in-out infinite;
 }

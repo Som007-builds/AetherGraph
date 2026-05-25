@@ -8,9 +8,9 @@ import { getExperiment, designExperiment } from '@/lib/api-client'
 import type { Experiment } from '@/types/axion'
 
 function getConfidenceColor(confidence: number): string {
-  if (confidence >= 0.8) return 'text-[#3ad389]'
-  if (confidence >= 0.5) return 'text-[#ffca16]'
-  return 'text-[#ff9592]'
+  if (confidence >= 0.8) return 'text-[#10b981]'
+  if (confidence >= 0.5) return 'text-[#f59e0b]'
+  return 'text-[#f43f5e]'
 }
 
 interface ExperimentCardProps {
@@ -59,8 +59,8 @@ export function ExperimentCard({ contradictionId, hasExperiment }: ExperimentCar
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-2 py-4 text-[#a1a4a5]">
-        <Loader2 className="h-4 w-4 animate-spin" />
+      <div className="flex items-center gap-2 py-4 text-[#94a3b8]">
+        <Loader2 className="h-4 w-4 animate-spin text-[#3b82f6]" />
         <span className="text-sm">Loading experiment...</span>
       </div>
     )
@@ -68,16 +68,16 @@ export function ExperimentCard({ contradictionId, hasExperiment }: ExperimentCar
 
   if (error) {
     return (
-      <div className="rounded-lg border border-[#ff9592]/30 bg-[#ff9592]/5 p-3">
-        <p className="text-sm text-[#ff9592]">{error}</p>
+      <div className="rounded-lg border border-[#f43f5e]/20 bg-[#f43f5e]/5 p-3">
+        <p className="text-sm text-[#f43f5e]">{error}</p>
       </div>
     )
   }
 
   if (!experiment) {
     return (
-      <div className="flex items-center justify-between rounded-lg border border-[#292d30] bg-black/50 p-4">
-        <div className="flex items-center gap-2 text-[#a1a4a5]">
+      <div className="flex items-center justify-between rounded-lg border border-[var(--axion-border-subtle)] bg-[var(--axion-surface-2)] p-4">
+        <div className="flex items-center gap-2 text-[#94a3b8]">
           <FlaskConical className="h-4 w-4" />
           <span className="text-sm">No experiment designed yet</span>
         </div>
@@ -86,7 +86,7 @@ export function ExperimentCard({ contradictionId, hasExperiment }: ExperimentCar
           disabled={isDesigning}
           variant="outline"
           size="sm"
-          className="border-[#70b8ff] bg-transparent text-[#70b8ff] hover:bg-[#70b8ff]/10"
+          className="border-[#3b82f6]/30 bg-[#3b82f6]/5 text-[#60a5fa] hover:bg-[#3b82f6]/10 hover:text-white transition-all duration-150"
         >
           {isDesigning ? (
             <>
@@ -94,7 +94,10 @@ export function ExperimentCard({ contradictionId, hasExperiment }: ExperimentCar
               <span>Designing...</span>
             </>
           ) : (
-            <span>Design Experiment</span>
+            <>
+              <FlaskConical className="h-3 w-3" />
+              <span>Design Experiment</span>
+            </>
           )}
         </Button>
       </div>
@@ -102,16 +105,18 @@ export function ExperimentCard({ contradictionId, hasExperiment }: ExperimentCar
   }
 
   return (
-    <div className="space-y-4 rounded-xl border border-[#292d30] bg-black p-5">
+    <div className="space-y-4 rounded-xl border border-[var(--axion-border-subtle)] axion-surface p-5 animate-fade-up">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-2">
-          <FlaskConical className="h-5 w-5 text-[#70b8ff]" />
-          <h4 className="font-medium text-[#f0f0f0]">{experiment.title}</h4>
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#3b82f6]/10">
+            <FlaskConical className="h-4 w-4 text-[#3b82f6]" />
+          </div>
+          <h4 className="font-medium text-[#f0f6ff]">{experiment.title}</h4>
         </div>
         <Badge
           variant="outline"
-          className={`border-[#292d30] bg-transparent ${getConfidenceColor(experiment.design_confidence)}`}
+          className={`border-[var(--axion-border-subtle)] bg-transparent tabular-nums ${getConfidenceColor(experiment.design_confidence)}`}
         >
           {Math.round(experiment.design_confidence * 100)}% design confidence
         </Badge>
@@ -119,87 +124,95 @@ export function ExperimentCard({ contradictionId, hasExperiment }: ExperimentCar
 
       {/* Hypotheses */}
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-lg border border-[#292d30] bg-[#0b0e14] p-4">
-          <h5 className="mb-2 text-xs font-medium uppercase tracking-wider text-[#3ad389]">
+        <div className="rounded-lg border border-[var(--axion-border-subtle)] border-l-2 border-l-[#10b981] bg-[var(--axion-surface-2)] p-4">
+          <h5 className="mb-2 text-[10px] font-medium uppercase tracking-wider text-[#10b981]">
             Hypothesis A
           </h5>
-          <p className="text-sm text-[#a1a4a5]">{experiment.hypothesis_a}</p>
+          <p className="text-sm text-[#94a3b8] leading-relaxed">{experiment.hypothesis_a}</p>
         </div>
-        <div className="rounded-lg border border-[#292d30] bg-[#0b0e14] p-4">
-          <h5 className="mb-2 text-xs font-medium uppercase tracking-wider text-[#ff9592]">
+        <div className="rounded-lg border border-[var(--axion-border-subtle)] border-l-2 border-l-[#f43f5e] bg-[var(--axion-surface-2)] p-4">
+          <h5 className="mb-2 text-[10px] font-medium uppercase tracking-wider text-[#f43f5e]">
             Hypothesis B
           </h5>
-          <p className="text-sm text-[#a1a4a5]">{experiment.hypothesis_b}</p>
+          <p className="text-sm text-[#94a3b8] leading-relaxed">{experiment.hypothesis_b}</p>
         </div>
       </div>
 
       {/* Procedure */}
       <div>
-        <h5 className="mb-2 text-xs font-medium uppercase tracking-wider text-[#6c6c6c]">
+        <h5 className="mb-2 text-[10px] font-medium uppercase tracking-wider text-[#475569]">
           Procedure
         </h5>
         {(() => {
           const lines = experiment.procedure.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
           if (lines.length <= 1) {
-            return <p className="text-sm text-[#a1a4a5] leading-relaxed">{experiment.procedure}</p>
+            return <p className="text-sm text-[#94a3b8] leading-relaxed">{experiment.procedure}</p>
           }
           return (
-            <ol className="list-decimal pl-5 space-y-1.5 text-sm text-[#a1a4a5]">
+            <div className="space-y-2">
               {lines.map((line, i) => {
-                const clean = line.replace(/^\d+[\.\)]\s*/, '')
+                const clean = line.replace(/^\d+[\.)\s]*/, '')
                 return (
-                  <li key={i} className="leading-relaxed">
-                    {clean}
-                  </li>
+                  <div key={i} className="flex items-start gap-3">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#3b82f6]/10 font-mono text-[10px] text-[#3b82f6]">
+                      {i + 1}
+                    </span>
+                    <p className="text-sm text-[#94a3b8] leading-relaxed">{clean}</p>
+                  </div>
                 )
               })}
-            </ol>
+            </div>
           )
         })()}
       </div>
 
-      {/* Metrics */}
-      <div className="flex flex-wrap gap-4 text-sm">
-        <div className="flex items-center gap-2 text-[#a1a4a5]">
-          <Database className="h-4 w-4 text-[#9281f7]" />
+      {/* Metrics Row */}
+      <div className="flex flex-wrap gap-3 rounded-lg border border-[var(--axion-border-subtle)] bg-[var(--axion-surface-2)] p-3">
+        <div className="flex items-center gap-1.5 text-xs text-[#94a3b8]">
+          <Database className="h-3.5 w-3.5 text-[#8b5cf6]" />
           <span>{experiment.dataset}</span>
         </div>
-        <div className="flex items-center gap-2 text-[#a1a4a5]">
-          <Clock className="h-4 w-4 text-[#70b8ff]" />
+        <div className="h-4 w-px bg-[var(--axion-border-subtle)]" />
+        <div className="flex items-center gap-1.5 text-xs text-[#94a3b8]">
+          <Clock className="h-3.5 w-3.5 text-[#3b82f6]" />
           <span>{experiment.duration}</span>
         </div>
-        <div className="flex items-center gap-2 text-[#a1a4a5]">
-          <DollarSign className="h-4 w-4 text-[#3ad389]" />
+        <div className="h-4 w-px bg-[var(--axion-border-subtle)]" />
+        <div className="flex items-center gap-1.5 text-xs text-[#94a3b8]">
+          <DollarSign className="h-3.5 w-3.5 text-[#10b981]" />
           <span>{experiment.cost}</span>
         </div>
         {experiment.metric && (
-          <div className="flex items-center gap-2 text-[#a1a4a5]">
-            <Target className="h-4 w-4 text-[#baa7ff]" />
-            <span>{experiment.metric}</span>
-          </div>
+          <>
+            <div className="h-4 w-px bg-[var(--axion-border-subtle)]" />
+            <div className="flex items-center gap-1.5 text-xs text-[#94a3b8]">
+              <Target className="h-3.5 w-3.5 text-[#a78bfa]" />
+              <span>{experiment.metric}</span>
+            </div>
+          </>
         )}
       </div>
 
       {/* Decision Rule */}
-      <div className="rounded-lg border border-[#3b9eff]/30 bg-[#3b9eff]/5 p-4">
-        <h5 className="mb-2 text-xs font-medium uppercase tracking-wider text-[#3b9eff]">
+      <div className="rounded-lg border border-[#3b82f6]/15 bg-[#3b82f6]/[0.03] p-4">
+        <h5 className="mb-2 text-[10px] font-medium uppercase tracking-wider text-[#3b82f6]">
           Decision Rule
         </h5>
-        <p className="text-sm text-[#f0f0f0]">{experiment.decision_rule}</p>
+        <p className="text-sm text-[#f0f6ff] leading-relaxed">{experiment.decision_rule}</p>
       </div>
 
       {/* Caveats */}
       {experiment.caveats && experiment.caveats.length > 0 && (
-        <div className="rounded-lg border border-[#ffca16]/30 bg-[#ffca16]/5 p-4">
+        <div className="rounded-lg border border-[#f59e0b]/15 bg-[#f59e0b]/[0.03] p-4">
           <div className="mb-2 flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-[#ffca16]" />
-            <h5 className="text-xs font-medium uppercase tracking-wider text-[#ffca16]">
+            <AlertTriangle className="h-3.5 w-3.5 text-[#f59e0b]" />
+            <h5 className="text-[10px] font-medium uppercase tracking-wider text-[#f59e0b]">
               Caveats
             </h5>
           </div>
-          <ul className="list-inside list-disc space-y-1 text-sm text-[#a1a4a5]">
+          <ul className="list-inside list-disc space-y-1 text-sm text-[#94a3b8]">
             {experiment.caveats.map((caveat, i) => (
-              <li key={i}>{caveat}</li>
+              <li key={i} className="leading-relaxed">{caveat}</li>
             ))}
           </ul>
         </div>

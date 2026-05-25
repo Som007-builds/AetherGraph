@@ -16,15 +16,15 @@ import { getContradictions } from '@/lib/api-client'
 import type { Contradiction, ContradictionsResponse } from '@/types/axion'
 
 function getConfidenceColor(confidence: number): string {
-  if (confidence >= 0.8) return 'text-[#3ad389]'
-  if (confidence >= 0.5) return 'text-[#ffca16]'
-  return 'text-[#ff9592]'
+  if (confidence >= 0.8) return 'text-[#10b981]'
+  if (confidence >= 0.5) return 'text-[#f59e0b]'
+  return 'text-[#f43f5e]'
 }
 
 function getConfidenceBg(confidence: number): string {
-  if (confidence >= 0.8) return 'bg-[#3ad389]/10 border-[#3ad389]/30'
-  if (confidence >= 0.5) return 'bg-[#ffca16]/10 border-[#ffca16]/30'
-  return 'bg-[#ff9592]/10 border-[#ff9592]/30'
+  if (confidence >= 0.8) return 'bg-[#10b981]/10 border-[#10b981]/20'
+  if (confidence >= 0.5) return 'bg-[#f59e0b]/10 border-[#f59e0b]/20'
+  return 'bg-[#f43f5e]/10 border-[#f43f5e]/20'
 }
 
 function ContradictionCard({ contradiction }: { contradiction: Contradiction }) {
@@ -32,72 +32,80 @@ function ContradictionCard({ contradiction }: { contradiction: Contradiction }) 
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <div className="rounded-xl border border-[#292d30] bg-black">
-        <CollapsibleTrigger className="flex w-full items-start gap-4 p-5 text-left hover:bg-[#0b0e14]">
+      <div className="rounded-xl border border-[var(--axion-border-subtle)] axion-surface axion-card-hover">
+        <CollapsibleTrigger className="flex w-full items-start gap-4 p-5 text-left transition-colors duration-150 hover:bg-[rgba(59,130,246,0.03)] rounded-xl">
           <div className="mt-1">
             {isOpen ? (
-              <ChevronDown className="h-4 w-4 text-[#6c6c6c]" />
+              <ChevronDown className="h-4 w-4 text-[#475569]" />
             ) : (
-              <ChevronRight className="h-4 w-4 text-[#6c6c6c]" />
+              <ChevronRight className="h-4 w-4 text-[#475569]" />
             )}
           </div>
           <div className="flex-1 space-y-2">
             <div className="flex items-center gap-3">
-              <AlertTriangle className="h-4 w-4 text-[#ff9592]" />
+              <AlertTriangle className="h-4 w-4 text-[#f43f5e]" />
               <Badge
                 variant="outline"
-                className={`border ${getConfidenceBg(contradiction.confidence)} ${getConfidenceColor(contradiction.confidence)}`}
+                className={`border ${getConfidenceBg(contradiction.confidence)} ${getConfidenceColor(contradiction.confidence)} tabular-nums`}
               >
                 {Math.round(contradiction.confidence * 100)}%
               </Badge>
               {contradiction.has_experiment && (
                 <Badge
                   variant="outline"
-                  className="border-[#70b8ff]/30 bg-[#70b8ff]/10 text-[#70b8ff]"
+                  className="border-[#3b82f6]/20 bg-[#3b82f6]/8 text-[#60a5fa]"
                 >
                   Has experiment
                 </Badge>
               )}
             </div>
-            <p className="text-sm text-[#a1a4a5] line-clamp-2">
+            <p className="text-sm text-[#94a3b8] line-clamp-2">
               {contradiction.explanation}
             </p>
           </div>
         </CollapsibleTrigger>
 
         <CollapsibleContent>
-          <div className="border-t border-[#292d30] p-5 space-y-4">
-            {/* Claims side by side */}
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-lg border border-[#292d30] bg-[#0b0e14] p-4">
+          <div className="border-t border-[var(--axion-border-subtle)] p-5 space-y-4 animate-fade-up">
+            {/* Claims side by side with VS badge */}
+            <div className="relative grid gap-4 md:grid-cols-2">
+              <div className="rounded-lg border border-[var(--axion-border-subtle)] bg-[var(--axion-surface-2)] p-4 border-l-2 border-l-[#3b82f6]">
                 <div className="mb-2 flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-[#baa7ff]" />
-                  <span className="font-mono text-xs text-[#9281f7]">
+                  <FileText className="h-4 w-4 text-[#8b5cf6]" />
+                  <span className="font-mono text-xs text-[#8b5cf6]">
                     {contradiction.paper_a}
                   </span>
                 </div>
-                <p className="text-sm text-[#f0f0f0]">{contradiction.claim_a.text}</p>
-                <div className="mt-2 flex items-center gap-2 text-xs text-[#6c6c6c]">
+                <p className="text-sm text-[#f0f6ff]">{contradiction.claim_a.text}</p>
+                <div className="mt-2 flex items-center gap-2 text-xs text-[#475569]">
                   <span>{contradiction.claim_a.section}</span>
-                  <span className="text-[#292d30]">|</span>
+                  <span className="text-[var(--axion-border-subtle)]">|</span>
                   <span className={getConfidenceColor(contradiction.claim_a.confidence)}>
-                    {Math.round(contradiction.claim_a.confidence * 100)}% confidence
+                    {Math.round(contradiction.claim_a.confidence * 100)}%
                   </span>
                 </div>
               </div>
-              <div className="rounded-lg border border-[#292d30] bg-[#0b0e14] p-4">
+
+              {/* VS Badge */}
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 hidden md:flex">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full border border-[#f43f5e]/30 bg-[#f43f5e]/10 text-[10px] font-bold text-[#f43f5e]">
+                  VS
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-[var(--axion-border-subtle)] bg-[var(--axion-surface-2)] p-4 border-l-2 border-l-[#f43f5e]">
                 <div className="mb-2 flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-[#baa7ff]" />
-                  <span className="font-mono text-xs text-[#9281f7]">
+                  <FileText className="h-4 w-4 text-[#8b5cf6]" />
+                  <span className="font-mono text-xs text-[#8b5cf6]">
                     {contradiction.paper_b}
                   </span>
                 </div>
-                <p className="text-sm text-[#f0f0f0]">{contradiction.claim_b.text}</p>
-                <div className="mt-2 flex items-center gap-2 text-xs text-[#6c6c6c]">
+                <p className="text-sm text-[#f0f6ff]">{contradiction.claim_b.text}</p>
+                <div className="mt-2 flex items-center gap-2 text-xs text-[#475569]">
                   <span>{contradiction.claim_b.section}</span>
-                  <span className="text-[#292d30]">|</span>
+                  <span className="text-[var(--axion-border-subtle)]">|</span>
                   <span className={getConfidenceColor(contradiction.claim_b.confidence)}>
-                    {Math.round(contradiction.claim_b.confidence * 100)}% confidence
+                    {Math.round(contradiction.claim_b.confidence * 100)}%
                   </span>
                 </div>
               </div>
@@ -105,10 +113,10 @@ function ContradictionCard({ contradiction }: { contradiction: Contradiction }) 
 
             {/* Full explanation */}
             <div>
-              <h5 className="mb-2 text-xs font-medium uppercase tracking-wider text-[#6c6c6c]">
+              <h5 className="mb-2 text-xs font-medium uppercase tracking-wider text-[#475569]">
                 Explanation
               </h5>
-              <p className="text-sm text-[#a1a4a5]">{contradiction.explanation}</p>
+              <p className="text-sm text-[#94a3b8]">{contradiction.explanation}</p>
             </div>
 
             {/* Experiment */}
@@ -127,13 +135,13 @@ function ContradictionCard({ contradiction }: { contradiction: Contradiction }) 
 
 function ContradictionSkeleton() {
   return (
-    <div className="rounded-xl border border-[#292d30] bg-black p-5 space-y-3">
+    <div className="rounded-xl border border-[var(--axion-border-subtle)] axion-surface p-5 space-y-3">
       <div className="flex items-center gap-3">
-        <Skeleton className="h-5 w-5 bg-[#1b1b1b]" />
-        <Skeleton className="h-5 w-16 bg-[#1b1b1b]" />
+        <div className="animate-shimmer h-5 w-5 rounded" />
+        <div className="animate-shimmer h-5 w-16 rounded" />
       </div>
-      <Skeleton className="h-4 w-full bg-[#1b1b1b]" />
-      <Skeleton className="h-4 w-3/4 bg-[#1b1b1b]" />
+      <div className="animate-shimmer h-4 w-full rounded" />
+      <div className="animate-shimmer h-4 w-3/4 rounded" />
     </div>
   )
 }
@@ -150,10 +158,10 @@ export function ContradictionList() {
   return (
     <div className="space-y-6">
       {/* Filter */}
-      <div className="flex items-center gap-6 rounded-xl border border-[#292d30] bg-black p-4">
-        <div className="flex items-center gap-2 text-sm text-[#a1a4a5]">
+      <div className="flex items-center gap-6 rounded-xl border border-[var(--axion-border-subtle)] axion-surface p-4">
+        <div className="flex items-center gap-2 text-sm text-[#94a3b8]">
           <span>Min confidence:</span>
-          <span className="font-mono text-[#f0f0f0]">{minConfidence}%</span>
+          <span className="font-mono text-[#f0f6ff] tabular-nums">{minConfidence}%</span>
         </div>
         <Slider
           value={[minConfidence]}
@@ -167,8 +175,8 @@ export function ContradictionList() {
 
       {/* Error state */}
       {error && (
-        <div className="rounded-xl border border-[#ff9592]/30 bg-[#ff9592]/5 p-4">
-          <p className="text-sm text-[#ff9592]">
+        <div className="rounded-xl border border-[#f43f5e]/20 bg-[#f43f5e]/5 p-4">
+          <p className="text-sm text-[#f43f5e]">
             Failed to load contradictions. Is the API running?
           </p>
         </div>
@@ -187,19 +195,19 @@ export function ContradictionList() {
       {data && !isLoading && (
         <>
           <div className="flex items-center justify-between">
-            <p className="text-sm text-[#6c6c6c]">
-              {data.total} contradiction{data.total !== 1 ? 's' : ''} found
+            <p className="text-sm text-[#475569]">
+              {data.total} contradiction{data.total !== 1 ? 's' : ''} detected
             </p>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-4 stagger-children">
             {data.contradictions.map((c) => (
               <ContradictionCard key={c.id} contradiction={c} />
             ))}
           </div>
           {data.contradictions.length === 0 && (
-            <div className="rounded-xl border border-[#292d30] bg-black p-8 text-center">
-              <AlertTriangle className="mx-auto h-8 w-8 text-[#6c6c6c]" />
-              <p className="mt-3 text-[#a1a4a5]">
+            <div className="rounded-xl border border-[var(--axion-border-subtle)] axion-surface p-8 text-center">
+              <AlertTriangle className="mx-auto h-8 w-8 text-[#334155]" />
+              <p className="mt-3 text-[#94a3b8]">
                 No contradictions found with confidence above {minConfidence}%
               </p>
             </div>

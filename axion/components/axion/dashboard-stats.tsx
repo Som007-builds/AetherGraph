@@ -11,87 +11,65 @@ const statItems = [
     key: 'papers' as const,
     label: 'Papers',
     icon: FileText,
-    color: 'text-[#f0f0f0]',
+    color: 'text-[#f0f6ff]',
   },
   {
     key: 'claims' as const,
     label: 'Claims',
     icon: MessageSquare,
-    color: 'text-[#baa7ff]',
+    color: 'text-[#8b5cf6]',
   },
   {
     key: 'contradictions' as const,
     label: 'Contradictions',
     icon: AlertTriangle,
-    color: 'text-[#ff9592]',
+    color: 'text-[#f43f5e]',
   },
   {
     key: 'gaps' as const,
-    label: 'Research Gaps',
+    label: 'Gaps',
     icon: Lightbulb,
-    color: 'text-[#9281f7]',
+    color: 'text-[#8b5cf6]',
   },
 ]
 
-function StatCard({
-  label,
-  value,
-  icon: Icon,
-  color,
-  isLoading,
-}: {
-  label: string
-  value: number | undefined
-  icon: React.ComponentType<{ className?: string }>
-  color: string
-  isLoading: boolean
-}) {
-  return (
-    <div className="flex items-center gap-4 rounded-xl border border-[#292d30] bg-black px-6 py-5">
-      <div className={`${color}`}>
-        <Icon className="h-5 w-5" />
-      </div>
-      <div className="flex flex-col gap-1">
-        <span className="text-sm text-[#a1a4a5]">{label}</span>
-        {isLoading ? (
-          <Skeleton className="h-7 w-16 bg-[#1b1b1b]" />
-        ) : (
-          <span className="text-2xl font-semibold text-[#f0f0f0]">
-            {value?.toLocaleString() ?? '—'}
-          </span>
-        )}
-      </div>
-    </div>
-  )
-}
-
 export function DashboardStats() {
   const { data, isLoading, error } = useSWR<GraphStats>('stats', getStats, {
-    refreshInterval: 60000, // Refresh every minute
+    refreshInterval: 60000,
   })
 
   if (error) {
     return (
-      <div className="rounded-xl border border-[#292d30] bg-black px-6 py-4">
-        <p className="text-sm text-[#ff9592]">
-          Failed to load stats. Is the API server running?
-        </p>
+      <div className="flex items-center gap-2 text-xs text-[#f43f5e]">
+        <AlertTriangle className="h-3 w-3" />
+        <span>API offline</span>
       </div>
     )
   }
 
   return (
-    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-      {statItems.map((item) => (
-        <StatCard
-          key={item.key}
-          label={item.label}
-          value={data?.[item.key]}
-          icon={item.icon}
-          color={item.color}
-          isLoading={isLoading}
-        />
-      ))}
+    <div className="flex items-center gap-3 stagger-children">
+      {statItems.map((item) => {
+        const Icon = item.icon
+        return (
+          <div
+            key={item.key}
+            className="flex items-center gap-2 rounded-lg border border-[var(--axion-border-subtle)] bg-[var(--axion-surface-1)] px-3 py-1.5 axion-card-hover"
+          >
+            <Icon className={`h-3.5 w-3.5 ${item.color}`} />
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-[#475569]">{item.label}</span>
+              {isLoading ? (
+                <Skeleton className="h-4 w-8 animate-shimmer" />
+              ) : (
+                <span className="font-mono text-sm font-semibold text-[#f0f6ff] tabular-nums">
+                  {data?.[item.key]?.toLocaleString() ?? '—'}
+                </span>
+              )}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }

@@ -54,24 +54,24 @@ interface RawReport {
 function getConfidenceConfig(confidence: number) {
   if (confidence >= 0.8)
     return {
-      color: 'text-[#3ad389]',
-      bg: 'bg-[#3ad389]/8',
-      border: 'border-[#3ad389]/20',
+      color: 'text-[#10b981]',
+      bg: 'bg-[#10b981]/8',
+      border: 'border-[#10b981]/20',
       icon: ShieldCheck,
       label: 'High Confidence',
     }
   if (confidence >= 0.5)
     return {
-      color: 'text-[#ffca16]',
-      bg: 'bg-[#ffca16]/8',
-      border: 'border-[#ffca16]/20',
+      color: 'text-[#f59e0b]',
+      bg: 'bg-[#f59e0b]/8',
+      border: 'border-[#f59e0b]/20',
       icon: ShieldAlert,
       label: 'Medium Confidence',
     }
   return {
-    color: 'text-[#ff9592]',
-    bg: 'bg-[#ff9592]/8',
-    border: 'border-[#ff9592]/20',
+    color: 'text-[#f43f5e]',
+    bg: 'bg-[#f43f5e]/8',
+    border: 'border-[#f43f5e]/20',
     icon: ShieldQuestion,
     label: 'Low Confidence',
   }
@@ -99,28 +99,28 @@ function ReflectionLog({ steps }: { steps: ReflectionStep[] }) {
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <CollapsibleTrigger className="flex w-full items-center gap-2 py-2 text-sm text-[#a1a4a5] hover:text-[#f0f0f0] transition-colors">
+      <CollapsibleTrigger className="flex w-full items-center gap-2 py-2 text-sm text-[#94a3b8] hover:text-[#f0f6ff] transition-colors">
         {isOpen ? (
           <ChevronDown className="h-4 w-4" />
         ) : (
           <ChevronRight className="h-4 w-4" />
         )}
-        <Brain className="h-4 w-4 text-[#9281f7]" />
+        <Brain className="h-4 w-4 text-[#8b5cf6]" />
         <span>Reasoning trace ({steps.length} steps)</span>
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className="mt-2 space-y-3 border-l-2 border-[#9281f7]/30 pl-4">
+        <div className="mt-2 space-y-3 border-l-2 border-[#8b5cf6]/30 pl-4">
           {steps.map((step, i) => (
-            <div key={i} className="space-y-1">
+            <div key={i} className="space-y-1 animate-fade-up" style={{ animationDelay: `${i * 50}ms` }}>
               <div className="flex items-center gap-2">
-                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#9281f7]/15 font-mono text-[10px] text-[#9281f7]">
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#8b5cf6]/15 font-mono text-[10px] text-[#8b5cf6]">
                   {step.step}
                 </span>
-                <span className="text-xs text-[#6c6c6c]">{step.action}</span>
+                <span className="text-xs text-[#475569]">{step.action}</span>
               </div>
-              <p className="text-sm text-[#a1a4a5] leading-relaxed">{step.observation}</p>
+              <p className="text-sm text-[#94a3b8] leading-relaxed">{step.observation}</p>
               {step.reasoning && (
-                <p className="text-xs text-[#6c6c6c] italic">{step.reasoning}</p>
+                <p className="text-xs text-[#475569] italic">{step.reasoning}</p>
               )}
             </div>
           ))}
@@ -137,7 +137,7 @@ function PlanSteps({ plan }: { plan: string[] }) {
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <CollapsibleTrigger className="flex w-full items-center gap-2 py-2 text-sm text-[#a1a4a5] hover:text-[#f0f0f0] transition-colors">
+      <CollapsibleTrigger className="flex w-full items-center gap-2 py-2 text-sm text-[#94a3b8] hover:text-[#f0f6ff] transition-colors">
         {isOpen ? (
           <ChevronDown className="h-4 w-4" />
         ) : (
@@ -146,13 +146,13 @@ function PlanSteps({ plan }: { plan: string[] }) {
         <span>Execution plan ({plan.length} sub-queries)</span>
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className="mt-2 space-y-2 border-l-2 border-[#3b9eff]/30 pl-4">
+        <div className="mt-2 space-y-2 border-l-2 border-[#3b82f6]/30 pl-4">
           {plan.map((step, i) => (
-            <div key={i} className="flex items-start gap-2">
-              <span className="mt-0.5 inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#3b9eff]/15 font-mono text-[10px] text-[#3b9eff]">
+            <div key={i} className="flex items-start gap-2 animate-fade-up" style={{ animationDelay: `${i * 50}ms` }}>
+              <span className="mt-0.5 inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[#3b82f6]/15 font-mono text-[10px] text-[#3b82f6]">
                 {i + 1}
               </span>
-              <span className="text-sm text-[#a1a4a5]">{step}</span>
+              <span className="text-sm text-[#94a3b8]">{step}</span>
             </div>
           ))}
         </div>
@@ -168,7 +168,7 @@ function CitationChip({ id }: { id: string }) {
       href={arxivUrl(clean)}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center gap-1 rounded-md border border-[#3b9eff]/20 bg-[#3b9eff]/8 px-1.5 py-0.5 font-mono text-[11px] text-[#70b8ff] transition-colors hover:bg-[#3b9eff]/15 hover:text-[#3b9eff]"
+      className="inline-flex items-center gap-1 rounded-md border border-[#3b82f6]/20 bg-[#3b82f6]/8 px-1.5 py-0.5 font-mono text-[11px] text-[#60a5fa] transition-all duration-150 hover:bg-[#3b82f6]/15 hover:text-[#3b82f6] hover:border-[#3b82f6]/30"
     >
       {clean}
       <ExternalLink className="h-2.5 w-2.5" />
@@ -192,9 +192,9 @@ function SectionHeader({
       <div className={`flex h-7 w-7 items-center justify-center rounded-lg ${color}`}>
         <Icon className="h-3.5 w-3.5" />
       </div>
-      <h4 className="font-medium text-[#f0f0f0]">{title}</h4>
+      <h4 className="font-medium text-[#f0f6ff]">{title}</h4>
       {count !== undefined && count > 0 && (
-        <span className="font-mono text-xs text-[#6c6c6c]">{count}</span>
+        <span className="font-mono text-xs text-[#475569]">{count}</span>
       )}
     </div>
   )
@@ -206,24 +206,24 @@ function ConsensusSection({ items }: { items: RawReport['consensus'] }) {
   if (!items || items.length === 0) return null
 
   return (
-    <div className="rounded-xl border border-[#292d30] bg-[#0a0f0a]/50 p-5">
+    <div className="rounded-xl border border-[var(--axion-border-subtle)] axion-surface p-5 axion-card-hover">
       <SectionHeader
         icon={CheckCircle2}
         title="Consensus"
         count={items.length}
-        color="bg-[#3ad389]/10 text-[#3ad389]"
+        color="bg-[#10b981]/10 text-[#10b981]"
       />
       <div className="space-y-3">
         {items.map((item, i) => (
           <div
             key={i}
-            className="flex gap-3 rounded-lg border border-[#3ad389]/10 bg-[#3ad389]/[0.03] p-3"
+            className="flex gap-3 rounded-lg border border-[#10b981]/10 bg-[#10b981]/[0.03] p-3"
           >
             <div className="mt-1 flex-shrink-0">
-              <div className="h-1.5 w-1.5 rounded-full bg-[#3ad389]" />
+              <div className="h-1.5 w-1.5 rounded-full bg-[#10b981]" />
             </div>
             <div className="space-y-1.5">
-              <p className="text-sm text-[#d0d0d0] leading-relaxed">
+              <p className="text-sm text-[#cbd5e1] leading-relaxed">
                 {item.finding}
               </p>
               {item.citations && item.citations.length > 0 && (
@@ -245,12 +245,12 @@ function DisputesSection({ items }: { items: RawReport['disputed'] }) {
   if (!items || items.length === 0) return null
 
   return (
-    <div className="rounded-xl border border-[#292d30] bg-[#150a0a]/50 p-5">
+    <div className="rounded-xl border border-[var(--axion-border-subtle)] axion-surface p-5 axion-card-hover">
       <SectionHeader
         icon={Swords}
         title="Disputes"
         count={items.length}
-        color="bg-[#ff9592]/10 text-[#ff9592]"
+        color="bg-[#f43f5e]/10 text-[#f43f5e]"
       />
       <div className="space-y-4">
         {items.map((d, i) => {
@@ -264,34 +264,36 @@ function DisputesSection({ items }: { items: RawReport['disputed'] }) {
           return (
             <div
               key={i}
-              className="rounded-lg border border-[#ff9592]/10 bg-[#ff9592]/[0.03] p-4 space-y-3"
+              className="rounded-lg border border-[#f43f5e]/10 bg-[#f43f5e]/[0.03] p-4 space-y-3"
             >
-              <p className="text-sm font-medium text-[#f0f0f0]">{d.topic}</p>
+              <p className="text-sm font-medium text-[#f0f6ff]">{d.topic}</p>
               <div className="grid gap-2 sm:grid-cols-2">
                 {/* Position A */}
-                <div className="rounded-md border border-[#292d30] bg-black/40 p-3 space-y-1.5">
+                <div className="rounded-md border border-[var(--axion-border-subtle)] bg-black/40 p-3 space-y-1.5">
                   <div className="flex items-center gap-1.5">
-                    <span className="inline-block h-2 w-2 rounded-full bg-[#3b9eff]" />
-                    <span className="text-[10px] font-medium uppercase tracking-wider text-[#6c6c6c]">
+                    <span className="inline-block h-2 w-2 rounded-full bg-[#3b82f6]" />
+                    <span className="text-[10px] font-medium uppercase tracking-wider text-[#475569]">
                       Position A
                     </span>
                   </div>
-                  <p className="text-xs text-[#a1a4a5] leading-relaxed">
+                  <p className="text-xs text-[#94a3b8] leading-relaxed">
                     {pa.claim}
                   </p>
                   {pa.paper && pa.paper !== '?' && (
                     <CitationChip id={pa.paper} />
                   )}
                 </div>
+                {/* VS Indicator */}
+                <div className="hidden sm:flex items-center justify-center absolute left-1/2 -translate-x-1/2 pointer-events-none" />
                 {/* Position B */}
-                <div className="rounded-md border border-[#292d30] bg-black/40 p-3 space-y-1.5">
+                <div className="rounded-md border border-[var(--axion-border-subtle)] bg-black/40 p-3 space-y-1.5">
                   <div className="flex items-center gap-1.5">
-                    <span className="inline-block h-2 w-2 rounded-full bg-[#ff9592]" />
-                    <span className="text-[10px] font-medium uppercase tracking-wider text-[#6c6c6c]">
+                    <span className="inline-block h-2 w-2 rounded-full bg-[#f43f5e]" />
+                    <span className="text-[10px] font-medium uppercase tracking-wider text-[#475569]">
                       Position B
                     </span>
                   </div>
-                  <p className="text-xs text-[#a1a4a5] leading-relaxed">
+                  <p className="text-xs text-[#94a3b8] leading-relaxed">
                     {pb.claim}
                   </p>
                   {pb.paper && pb.paper !== '?' && (
@@ -311,21 +313,21 @@ function GapsSection({ items }: { items: string[] }) {
   if (!items || items.length === 0) return null
 
   return (
-    <div className="rounded-xl border border-[#292d30] bg-[#0f0a15]/50 p-5">
+    <div className="rounded-xl border border-[var(--axion-border-subtle)] axion-surface p-5 axion-card-hover">
       <SectionHeader
         icon={HelpCircle}
         title="Research Gaps"
         count={items.length}
-        color="bg-[#9281f7]/10 text-[#9281f7]"
+        color="bg-[#8b5cf6]/10 text-[#8b5cf6]"
       />
       <div className="space-y-2">
         {items.map((gap, i) => (
           <div
             key={i}
-            className="flex gap-3 rounded-lg border border-[#9281f7]/10 bg-[#9281f7]/[0.03] p-3"
+            className="flex gap-3 rounded-lg border border-[#8b5cf6]/10 bg-[#8b5cf6]/[0.03] p-3"
           >
-            <HelpCircle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-[#9281f7]/50" />
-            <p className="text-sm text-[#a1a4a5] leading-relaxed">{gap}</p>
+            <HelpCircle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-[#8b5cf6]/50" />
+            <p className="text-sm text-[#94a3b8] leading-relaxed">{gap}</p>
           </div>
         ))}
       </div>
@@ -337,21 +339,21 @@ function ExperimentsSection({ items }: { items: string[] }) {
   if (!items || items.length === 0) return null
 
   return (
-    <div className="rounded-xl border border-[#292d30] bg-[#0a0f14]/50 p-5">
+    <div className="rounded-xl border border-[var(--axion-border-subtle)] axion-surface p-5 axion-card-hover">
       <SectionHeader
         icon={FlaskConical}
         title="Recommended Experiments"
         count={items.length}
-        color="bg-[#70b8ff]/10 text-[#70b8ff]"
+        color="bg-[#3b82f6]/10 text-[#3b82f6]"
       />
       <div className="space-y-2">
         {items.map((exp, i) => (
           <div
             key={i}
-            className="flex gap-3 rounded-lg border border-[#70b8ff]/10 bg-[#70b8ff]/[0.03] p-3"
+            className="flex gap-3 rounded-lg border border-[#3b82f6]/10 bg-[#3b82f6]/[0.03] p-3"
           >
-            <FlaskConical className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-[#70b8ff]/50" />
-            <p className="text-sm text-[#a1a4a5] leading-relaxed">{exp}</p>
+            <FlaskConical className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-[#3b82f6]/50" />
+            <p className="text-sm text-[#94a3b8] leading-relaxed">{exp}</p>
           </div>
         ))}
       </div>
@@ -363,12 +365,12 @@ function SourcesSection({ sources }: { sources: string[] }) {
   if (sources.length === 0) return null
 
   return (
-    <div className="rounded-xl border border-[#292d30] bg-black p-5">
+    <div className="rounded-xl border border-[var(--axion-border-subtle)] axion-surface p-5 axion-card-hover">
       <SectionHeader
         icon={BookOpen}
         title="Sources"
         count={sources.length}
-        color="bg-[#3b9eff]/10 text-[#3b9eff]"
+        color="bg-[#3b82f6]/10 text-[#3b82f6]"
       />
       <div className="flex flex-wrap gap-2">
         {sources.map((source, i) => {
@@ -379,11 +381,11 @@ function SourcesSection({ sources }: { sources: string[] }) {
               href={arxivUrl(clean)}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[#292d30] bg-[#1b1b1b] px-3 py-2 text-sm text-[#70b8ff] transition-all hover:border-[#3b9eff]/40 hover:bg-[#3b9eff]/10"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--axion-border-subtle)] bg-[var(--axion-surface-2)] px-3 py-2 text-sm text-[#60a5fa] transition-all duration-150 hover:border-[#3b82f6]/30 hover:bg-[#3b82f6]/10"
             >
               <BookOpen className="h-3.5 w-3.5" />
               <span className="font-mono">{clean}</span>
-              <ExternalLink className="h-3 w-3 text-[#6c6c6c]" />
+              <ExternalLink className="h-3 w-3 text-[#475569]" />
             </a>
           )
         })}
@@ -396,30 +398,30 @@ function ExecutiveSummarySection({ report }: { report?: string }) {
   if (!report) return null
 
   return (
-    <div className="rounded-xl border border-[#292d30] bg-[#0b0e14] p-5">
+    <div className="rounded-xl border border-[var(--axion-border-subtle)] axion-surface p-5 axion-card-hover">
       <SectionHeader
         icon={Sparkles}
         title="Executive Summary"
-        color="bg-[#3b9eff]/10 text-[#3b9eff]"
+        color="bg-[#3b82f6]/10 text-[#3b82f6]"
       />
-      <div className="text-sm text-[#d0d0d0] leading-relaxed space-y-3">
+      <div className="text-sm text-[#cbd5e1] leading-relaxed space-y-3">
         <ReactMarkdown
           components={{
-            h1: ({node, ...props}) => <h1 className="text-lg font-bold text-white mt-4 mb-2" {...props} />,
-            h2: ({node, ...props}) => <h2 className="text-base font-semibold text-white mt-3 mb-2" {...props} />,
-            h3: ({node, ...props}) => <h3 className="text-sm font-semibold text-white mt-2 mb-1" {...props} />,
+            h1: ({node, ...props}) => <h1 className="text-lg font-bold text-[#f0f6ff] mt-4 mb-2" {...props} />,
+            h2: ({node, ...props}) => <h2 className="text-base font-semibold text-[#f0f6ff] mt-3 mb-2" {...props} />,
+            h3: ({node, ...props}) => <h3 className="text-sm font-semibold text-[#f0f6ff] mt-2 mb-1" {...props} />,
             p: ({node, ...props}) => <p className="mb-3 last:mb-0" {...props} />,
             ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-3 space-y-1" {...props} />,
             ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-3 space-y-1" {...props} />,
-            li: ({node, ...props}) => <li className="text-sm text-[#a1a4a5]" {...props} />,
-            strong: ({node, ...props}) => <strong className="font-semibold text-white" {...props} />,
-            code: ({node, ...props}) => <code className="bg-white/10 px-1.5 py-0.5 rounded font-mono text-xs text-[#f0f0f0]" {...props} />,
+            li: ({node, ...props}) => <li className="text-sm text-[#94a3b8]" {...props} />,
+            strong: ({node, ...props}) => <strong className="font-semibold text-[#f0f6ff]" {...props} />,
+            code: ({node, ...props}) => <code className="bg-white/5 px-1.5 py-0.5 rounded font-mono text-xs text-[#f0f6ff]" {...props} />,
             a: ({node, ...props}) => {
               const text = props.children?.toString() || ''
               if (text.startsWith('arXiv:') || text.match(/^\d{4}\.\d{4,5}$/) || text.startsWith('[arXiv:')) {
                 return <CitationChip id={text} />
               }
-              return <a className="text-[#70b8ff] hover:underline" target="_blank" rel="noopener noreferrer" {...props} />
+              return <a className="text-[#60a5fa] hover:underline" target="_blank" rel="noopener noreferrer" {...props} />
             }
           }}
         >
@@ -437,7 +439,13 @@ interface QueryHistoryItem {
   result: CoordinatorOutput
 }
 
-export function QueryPanel() {
+interface QueryPanelProps {
+  externalQuery?: string | null
+  onQueryClear?: () => void
+  onLoadingChange?: (loading: boolean) => void
+}
+
+export function QueryPanel({ externalQuery, onQueryClear, onLoadingChange }: QueryPanelProps) {
   const [question, setQuestion] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [result, setResult] = useState<CoordinatorOutput | null>(null)
@@ -467,16 +475,37 @@ export function QueryPanel() {
     }
   }, [])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!question.trim() || isLoading) return
+  // Also persist to axion-query-history (for command bar recent queries)
+  useEffect(() => {
+    if (mounted && history.length > 0) {
+      localStorage.setItem('axion-query-history', JSON.stringify(history))
+    }
+  }, [history, mounted])
+
+  // Handle external query from Command Bar
+  useEffect(() => {
+    if (externalQuery && mounted) {
+      setQuestion(externalQuery)
+      onQueryClear?.()
+      // Auto-submit
+      executeQuery(externalQuery)
+    }
+  }, [externalQuery, mounted])
+
+  // Propagate loading state
+  useEffect(() => {
+    onLoadingChange?.(isLoading)
+  }, [isLoading, onLoadingChange])
+
+  const executeQuery = async (q: string) => {
+    if (!q.trim() || isLoading) return
 
     setIsLoading(true)
     setError(null)
     setResult(null)
 
     try {
-      const trimmedQ = question.trim()
+      const trimmedQ = q.trim()
       const output = await runQuery(trimmedQ)
       setResult(output)
 
@@ -499,6 +528,11 @@ export function QueryPanel() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    await executeQuery(question)
   }
 
   const handleSelectHistory = (item: QueryHistoryItem) => {
@@ -538,9 +572,9 @@ export function QueryPanel() {
 
   if (!mounted) {
     return (
-      <div className="rounded-xl border border-[#292d30] p-6 space-y-4">
-        <Skeleton className="h-24 w-full bg-[#1b1b1b]" />
-        <Skeleton className="h-10 w-24 bg-[#1b1b1b]" />
+      <div className="rounded-xl border border-[var(--axion-border-subtle)] p-6 space-y-4">
+        <div className="animate-shimmer h-24 w-full rounded-lg" />
+        <div className="animate-shimmer h-10 w-24 rounded-lg" />
       </div>
     )
   }
@@ -548,27 +582,27 @@ export function QueryPanel() {
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
       {/* Sidebar - Chat History */}
-      <div className="md:col-span-4 border border-[#292d30] rounded-xl bg-black/40 p-4 space-y-4 flex flex-col max-h-[750px] min-h-[400px]">
-        <div className="flex items-center justify-between border-b border-[#292d30] pb-3">
+      <div className="md:col-span-4 border border-[var(--axion-border-subtle)] rounded-xl axion-surface p-4 space-y-4 flex flex-col max-h-[750px] min-h-[400px]">
+        <div className="flex items-center justify-between border-b border-[var(--axion-border-subtle)] pb-3">
           <div className="flex items-center gap-2">
-            <History className="h-4 w-4 text-[#3b9eff]" />
-            <h3 className="font-semibold text-sm text-[#f0f0f0]">Research History</h3>
+            <History className="h-4 w-4 text-[#3b82f6]" />
+            <h3 className="font-semibold text-sm text-[#f0f6ff]">History</h3>
           </div>
           <Button
             size="sm"
             onClick={handleNewQuery}
-            className="h-8 border border-[#3b9eff]/40 bg-transparent text-[#70b8ff] hover:bg-[#3b9eff]/10 hover:text-white transition-all text-xs flex items-center gap-1"
+            className="h-7 border border-[#3b82f6]/30 bg-transparent text-[#60a5fa] hover:bg-[#3b82f6]/10 hover:text-white transition-all text-xs flex items-center gap-1"
           >
-            <Plus className="h-3.5 w-3.5" />
-            <span>New Ask</span>
+            <Plus className="h-3 w-3" />
+            <span>New</span>
           </Button>
         </div>
 
         {/* Query List */}
-        <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+        <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
           {history.length === 0 ? (
-            <div className="text-center py-8 text-[#6c6c6c] text-xs">
-              No queries run yet. Start a new ask to build history.
+            <div className="text-center py-8 text-[#334155] text-xs">
+              No queries yet. Use the command bar or input below.
             </div>
           ) : (
             history.map((item) => {
@@ -577,20 +611,20 @@ export function QueryPanel() {
                 <div
                   key={item.id}
                   onClick={() => handleSelectHistory(item)}
-                  className={`group relative flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                  className={`group relative flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all duration-150 ${
                     isActive
-                      ? 'border-[#3b9eff] bg-[#3b9eff]/5 text-white'
-                      : 'border-[#292d30] bg-[#111] hover:border-[#6c6c6c] hover:bg-[#151515] text-[#a1a4a5]'
+                      ? 'border-[#3b82f6]/30 bg-[#3b82f6]/5 text-[#f0f6ff]'
+                      : 'border-transparent bg-transparent hover:bg-[rgba(59,130,246,0.04)] text-[#94a3b8]'
                   }`}
                 >
-                  <MessageSquare className={`h-4 w-4 mt-0.5 flex-shrink-0 ${isActive ? 'text-[#3b9eff]' : 'text-[#6c6c6c]'}`} />
+                  <MessageSquare className={`h-3.5 w-3.5 mt-0.5 flex-shrink-0 ${isActive ? 'text-[#3b82f6]' : 'text-[#334155]'}`} />
                   <div className="flex-1 pr-6 overflow-hidden">
                     <p className="text-xs font-medium truncate leading-relaxed">{item.question}</p>
-                    <span className="text-[10px] text-[#6c6c6c] block mt-1">{item.timestamp}</span>
+                    <span className="text-[10px] text-[#334155] block mt-0.5">{item.timestamp}</span>
                   </div>
                   <button
                     onClick={(e) => handleDeleteHistory(item.id, e)}
-                    className="absolute right-2 top-2 p-1 rounded hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity text-[#6c6c6c] hover:text-[#ff9592]"
+                    className="absolute right-2 top-2 p-1 rounded hover:bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity text-[#475569] hover:text-[#f43f5e]"
                     title="Delete query history"
                   >
                     <Trash2 className="h-3 w-3" />
@@ -605,29 +639,29 @@ export function QueryPanel() {
       {/* Main Content Area */}
       <div className="md:col-span-8 space-y-6">
         {/* Question input */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3">
           <div className="relative">
             <textarea
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               placeholder="Ask a research question… e.g., What is the current consensus on transformer scaling laws?"
-              className="min-h-[120px] w-full resize-none rounded-xl border border-[#292d30] bg-black px-4 py-3 text-[#f0f0f0] placeholder:text-[#6c6c6c] focus:border-[#3b9eff] focus:outline-none focus:ring-1 focus:ring-[#3b9eff]/50 transition-colors"
+              className="min-h-[100px] w-full resize-none rounded-xl border border-[var(--axion-border-subtle)] bg-[var(--axion-surface-1)] px-4 py-3 text-sm text-[#f0f6ff] placeholder:text-[#334155] focus:border-[#3b82f6]/40 focus:outline-none focus:ring-1 focus:ring-[#3b82f6]/20 focus:shadow-[0_0_20px_rgba(59,130,246,0.08)] transition-all duration-200"
               disabled={isLoading}
             />
           </div>
           <div className="flex items-center justify-between">
-            <p className="text-xs text-[#6c6c6c]">
-              The AI will search the knowledge graph and synthesize an answer
+            <p className="text-xs text-[#334155]">
+              Multi-agent synthesis across your knowledge graph
             </p>
             <Button
               type="submit"
               disabled={!question.trim() || isLoading}
-              className="border border-[#3b9eff] bg-transparent text-white hover:bg-[#3b9eff]/10"
+              className="border border-[#3b82f6]/40 bg-[#3b82f6]/5 text-[#60a5fa] hover:bg-[#3b82f6]/10 hover:text-white transition-all duration-150"
             >
               {isLoading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Thinking…</span>
+                  <span>Synthesizing…</span>
                 </>
               ) : (
                 <>
@@ -641,52 +675,55 @@ export function QueryPanel() {
 
         {/* Loading state */}
         {isLoading && (
-          <div className="rounded-xl border border-[#3b9eff]/20 bg-[#3b9eff]/[0.03] p-6 space-y-6">
-            <div className="flex items-center gap-3">
-              <Loader2 className="h-4 w-4 animate-spin text-[#3b9eff]" />
-              <span className="text-[#f0f0f0] font-medium">
-                Searching knowledge graph and synthesizing response…
-              </span>
+          <div className="rounded-xl border border-[#3b82f6]/15 bg-[#3b82f6]/[0.02] p-6 space-y-6 animate-fade-up">
+            {/* Multi-step progress */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#3b82f6]/10">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-[#3b82f6]" />
+                </div>
+                <span className="text-sm text-[#f0f6ff] font-medium">
+                  Synthesizing research intelligence…
+                </span>
+              </div>
+              <div className="ml-9 space-y-2">
+                {['Decomposing query', 'Searching claims database', 'Analyzing contradictions', 'Synthesizing report'].map((step, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs animate-fade-up" style={{ animationDelay: `${i * 300}ms` }}>
+                    <div className="h-1 w-1 rounded-full bg-[#3b82f6]/50" />
+                    <span className="text-[#475569]">{step}</span>
+                  </div>
+                ))}
+              </div>
             </div>
             <div className="space-y-3">
-              <Skeleton className="h-4 w-full bg-[#1b1b1b]" />
-              <Skeleton className="h-4 w-5/6 bg-[#1b1b1b]" />
-              <Skeleton className="h-4 w-4/5 bg-[#1b1b1b]" />
-            </div>
-            <div className="border-t border-[#292d30] pt-4 space-y-4">
-              <div className="flex gap-2">
-                <Skeleton className="h-6 w-24 bg-[#1b1b1b]" />
-                <Skeleton className="h-6 w-32 bg-[#1b1b1b]" />
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Skeleton className="h-24 w-full bg-[#1b1b1b]" />
-                <Skeleton className="h-24 w-full bg-[#1b1b1b]" />
-              </div>
+              <div className="animate-shimmer h-4 w-full rounded" />
+              <div className="animate-shimmer h-4 w-5/6 rounded" style={{ animationDelay: '100ms' }} />
+              <div className="animate-shimmer h-4 w-4/5 rounded" style={{ animationDelay: '200ms' }} />
             </div>
           </div>
         )}
 
         {/* Error state */}
         {error && (
-          <div className="rounded-xl border border-[#ff9592]/30 bg-[#ff9592]/5 p-4">
-            <p className="text-sm text-[#ff9592]">{error}</p>
+          <div className="rounded-xl border border-[#f43f5e]/20 bg-[#f43f5e]/5 p-4 animate-fade-up">
+            <p className="text-sm text-[#f43f5e]">{error}</p>
           </div>
         )}
 
         {/* Result */}
         {result && !isLoading && (
-          <div className="space-y-4">
+          <div className="space-y-4 animate-fade-up">
             {/* Header card — Question + confidence */}
-            <div className="rounded-xl border border-[#292d30] bg-black p-5">
+            <div className="rounded-xl border border-[var(--axion-border-subtle)] axion-surface p-5">
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-2 flex-1">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-[#3b9eff]" />
-                    <span className="text-xs font-medium uppercase tracking-wider text-[#6c6c6c]">
+                    <Sparkles className="h-4 w-4 text-[#3b82f6]" />
+                    <span className="text-xs font-medium uppercase tracking-wider text-[#475569]">
                       Research Report
                     </span>
                   </div>
-                  <p className="text-[#f0f0f0] font-medium leading-snug">{question}</p>
+                  <p className="text-[#f0f6ff] font-medium leading-snug">{question}</p>
                 </div>
                 {conf && (
                   <div
@@ -694,10 +731,10 @@ export function QueryPanel() {
                   >
                     <conf.icon className={`h-4 w-4 ${conf.color}`} />
                     <div className="text-right">
-                      <p className={`text-sm font-medium ${conf.color}`}>
+                      <p className={`text-sm font-medium tabular-nums ${conf.color}`}>
                         {Math.round(result.confidence * 100)}%
                       </p>
-                      <p className="text-[10px] text-[#6c6c6c]">{conf.label}</p>
+                      <p className="text-[10px] text-[#475569]">{conf.label}</p>
                     </div>
                   </div>
                 )}
@@ -705,23 +742,23 @@ export function QueryPanel() {
 
               {/* Confidence reason */}
               {raw.confidence_reason && (
-                <p className="mt-3 text-xs text-[#6c6c6c] border-t border-[#292d30] pt-3">
+                <p className="mt-3 text-xs text-[#475569] border-t border-[var(--axion-border-subtle)] pt-3">
                   {raw.confidence_reason}
                 </p>
               )}
 
               {/* Meta badges */}
-              <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[#292d30] pt-3">
+              <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[var(--axion-border-subtle)] pt-3">
                 <Badge
                   variant="outline"
-                  className="border-[#292d30] bg-transparent text-[#a1a4a5]"
+                  className="border-[var(--axion-border-subtle)] bg-transparent text-[#94a3b8]"
                 >
                   {result.iterations} iteration{result.iterations !== 1 ? 's' : ''}
                 </Badge>
                 {result.sources.length > 0 && (
                   <Badge
                     variant="outline"
-                    className="border-[#292d30] bg-transparent text-[#70b8ff]"
+                    className="border-[var(--axion-border-subtle)] bg-transparent text-[#60a5fa]"
                   >
                     <BookOpen className="mr-1 h-3 w-3" />
                     {result.sources.length} source{result.sources.length !== 1 ? 's' : ''}
@@ -730,7 +767,7 @@ export function QueryPanel() {
                 {raw.consensus && (
                   <Badge
                     variant="outline"
-                    className="border-[#292d30] bg-transparent text-[#3ad389]"
+                    className="border-[var(--axion-border-subtle)] bg-transparent text-[#10b981]"
                   >
                     {raw.consensus.length} consensus point{raw.consensus.length !== 1 ? 's' : ''}
                   </Badge>
@@ -738,7 +775,7 @@ export function QueryPanel() {
                 {raw.disputed && raw.disputed.length > 0 && (
                   <Badge
                     variant="outline"
-                    className="border-[#292d30] bg-transparent text-[#ff9592]"
+                    className="border-[var(--axion-border-subtle)] bg-transparent text-[#f43f5e]"
                   >
                     {raw.disputed.length} dispute{raw.disputed.length !== 1 ? 's' : ''}
                   </Badge>
@@ -747,7 +784,7 @@ export function QueryPanel() {
             </div>
 
             {/* Collapsible reasoning */}
-            <div className="rounded-xl border border-[#292d30] bg-black p-4">
+            <div className="rounded-xl border border-[var(--axion-border-subtle)] axion-surface p-4">
               <PlanSteps plan={result.plan} />
               <ReflectionLog steps={result.reflection_log} />
             </div>

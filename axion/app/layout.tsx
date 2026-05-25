@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Inter, JetBrains_Mono } from 'next/font/google'
+import { Inter, JetBrains_Mono, Outfit } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
@@ -13,10 +13,15 @@ const jetbrainsMono = JetBrains_Mono({
   variable: '--font-jetbrains-mono',
 });
 
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: '--font-outfit',
+});
+
 export const metadata: Metadata = {
-  title: 'Axion - AI Research Knowledge Graph',
-  description: 'Explore scientific claims, contradictions, and research gaps with AI-powered analysis',
-  generator: 'v0.app',
+  title: 'AXION — Scientific Intelligence System',
+  description: 'Multi-agent AI research knowledge graph. Ingest papers, extract claims, detect contradictions, discover gaps, and synthesize research intelligence.',
+  generator: 'AXION',
   icons: {
     icon: [
       {
@@ -43,7 +48,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark bg-black">
-      <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} ${jetbrainsMono.variable} ${outfit.variable} font-sans antialiased`}>
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
