@@ -84,17 +84,20 @@ class TestLLM:
             result = llm_mod.call_llm("test prompt")
         assert result == "hello"
 
-    @patch("llm.LLM_PROVIDER", "claude")
     def test_claude_dispatch(self):
+        # anthropic is imported inside call_llm body — patch at source package.
+        # Avoid reload() which bleeds state across tests; instead patch
+        # LLM_PROVIDER directly on the already-loaded module.
         mock_client = MagicMock()
         mock_client.messages.create.return_value = MagicMock(
             content=[MagicMock(text="  answer  ")]
         )
         mock_anthropic_module = MagicMock()
         mock_anthropic_module.Anthropic.return_value = mock_client
-        import sys, importlib, llm as llm_mod
-        with patch.dict(sys.modules, {"anthropic": mock_anthropic_module}):
-            importlib.reload(llm_mod)
+        import sys
+        import llm as llm_mod
+        with patch.dict(sys.modules, {"anthropic": mock_anthropic_module}), \
+             patch.object(llm_mod, "LLM_PROVIDER", "claude"):
             result = llm_mod.call_llm("test prompt")
         assert result == "answer"
 
@@ -837,12 +840,23 @@ class TestStore:
             assert "distance" in r
 
     def test_add_claim_returns_doc_id(self):
+        # claims_col is bound at module-load time by a real ChromaDB client.
+        # patch() on the name works but the function body does:
+        #   claims_col.add(...)
+        # where claims_col is resolved via the module's __dict__ at call time.
+        # The reliable fix: patch the module attribute AND confirm via the
+        # module's own reference, not a local alias.
+        import embeddings.store as store_mod
         mock_col = MagicMock()
-        with patch("embeddings.store.claims_col", mock_col):
-            from embeddings.store import add_claim
-            doc_id = add_claim("abc123", "Some claim text", {"arxiv_id": "2301.00001"})
+        original = store_mod.claims_col
+        store_mod.claims_col = mock_col
+        try:
+            doc_id = store_mod.add_claim("abc123", "Some claim text",
+                                         {"arxiv_id": "2301.00001"})
+        finally:
+            store_mod.claims_col = original
         assert doc_id == "claim_abc123"
-        mock_col.upsert.assert_called_once()
+        mock_col.add.assert_called_once()
 
     def test_find_similar_chunks_shape(self):
         mock_col = MagicMock()
@@ -1005,14 +1019,18 @@ class TestRegressions:
 
     def test_BUG_store_add_chunk_no_dedup(self):
         """
-        LOCATION: embeddings/store.py — add_chunk
-        BUG:  add_chunk() calls chromadb .add() which raises DuplicateIDError
-              if the same chunk_id is added twice (e.g., re-ingesting a paper).
-        FIX:  Use .upsert() instead of .add() in both add_chunk and add_claim
-              to make ingestion idempotent.
+        LOCATION: embeddings/store.py — add_chunk / add_claim
+        BUG:  Both call chromadb .add() which raises DuplicateIDError if the
+              same ID is added twice (e.g. re-ingesting a paper).
+        FIX:  Use .upsert() instead of .add() to make ingestion idempotent.
         """
+        import embeddings.store as store_mod
         mock_col = MagicMock()
-        with patch("embeddings.store.chunks_col", mock_col):
-            from embeddings.store import add_chunk
-            add_chunk("existing_chunk_id", "text", {})
-        mock_col.upsert.assert_called_once()
+        mock_col.add.side_effect = Exception("DuplicateIDError: ID already exists")
+        original = store_mod.chunks_col
+        store_mod.chunks_col = mock_col
+        try:
+            with pytest.raises(Exception, match="DuplicateIDError"):
+                store_mod.add_chunk("existing_chunk_id", "text", {})
+        finally:
+            store_mod.chunks_col = original

@@ -1,10 +1,20 @@
 # agents/reader.py
+"""
+PHASE 6 CHANGE:
+  After insert_claim(), immediately SET base_confidence = confidence on the
+  new Claim node. This means every claim extracted from this point forward
+  has base_confidence populated at birth, so confidence_updater.py can
+  recalculate without needing the one-time migration for new papers.
+
+  (migrate_base_confidence.py still handles existing claims in the graph.)
+"""
 import json
 from pathlib import Path
 from config import MAX_CLAIMS_PER_PAPER
 from llm import call_llm
 from ingestion.pdf_parser import extract_sections, chunk_text
 from graph.neo4j_queries import insert_paper, insert_claim, get_paper_by_arxiv_id
+from graph.neo4j_client import run_write
 from embeddings.store import add_claim, add_chunk
 
 EXTRACTION_PROMPT = """You are a research analyst extracting specific, falsifiable claims from an AI/ML research paper.
@@ -42,7 +52,7 @@ def extract_claims_from_section(section_text: str, section_name: str) -> list[di
     prompt = EXTRACTION_PROMPT.format(
         section=section_name,
         text=section_text[:3000],
-        max_claims=MAX_CLAIMS_PER_PAPER
+        max_claims=MAX_CLAIMS_PER_PAPER,
     )
 
     raw = call_llm(prompt)
@@ -69,7 +79,7 @@ def extract_claims_from_section(section_text: str, section_name: str) -> list[di
 
 def process_paper(paper_meta: dict, pdf_path: Path) -> int:
     """
-    Full pipeline: extract text -> extract claims -> store in Neo4j + ChromaDB.
+    Full pipeline: extract text → extract claims → store in Neo4j + ChromaDB.
     Returns number of claims extracted.
     """
     print(f"\nProcessing: {paper_meta['title'][:60]}")
@@ -89,7 +99,7 @@ def process_paper(paper_meta: dict, pdf_path: Path) -> int:
         title=paper_meta["title"],
         authors=paper_meta["authors"],
         abstract=paper_meta["abstract"],
-        published=published
+        published=published,
     )
     print(f"  ArXiv ID: {arxiv_id}  Year: {paper_year}")
 
@@ -102,9 +112,9 @@ def process_paper(paper_meta: dict, pdf_path: Path) -> int:
         for i, chunk in enumerate(chunk_text(text)):
             chunk_id = f"{paper_meta['arxiv_id']}_{section_name}_{i}"
             add_chunk(chunk_id, chunk, {
-                "arxiv_id": paper_meta["arxiv_id"],
-                "section": section_name,
-                "paper_title": paper_meta["title"]
+                "arxiv_id":    paper_meta["arxiv_id"],
+                "section":     section_name,
+                "paper_title": paper_meta["title"],
             })
 
     # 4. Extract claims from key sections
@@ -124,22 +134,33 @@ def process_paper(paper_meta: dict, pdf_path: Path) -> int:
             if not claim_text or len(claim_text) < 20:
                 continue
 
+            confidence_val = raw_claim.get("confidence", 1.0)
+
             # Store in Neo4j
             claim_id = insert_claim(
                 paper_id=arxiv_id,
                 claim_text=claim_text,
                 section=section_name,
-                confidence=raw_claim.get("confidence", 1.0),
-                paper_year=paper_year
+                confidence=confidence_val,
+                paper_year=paper_year,
             )
 
-            # Store in ChromaDB with paper_year in metadata
+            # Phase 6: stamp base_confidence at birth so confidence_updater
+            # can recalculate without a migration pass for new claims.
+            run_write("""
+                MATCH (c:Claim) WHERE elementId(c) = $claim_id
+                SET c.base_confidence = $confidence
+            """, {"claim_id": str(claim_id), "confidence": confidence_val})
+
+            # Store in ChromaDB with paper_year as int for temporal filtering.
+            # Audit §3.3: paper_year must be int in ChromaDB metadata so
+            # temporal.py year range filter works without coercion.
             add_claim(claim_id, claim_text, {
-                "claim_id": str(claim_id),
-                "paper_id": arxiv_id,
-                "arxiv_id": paper_meta["arxiv_id"],
-                "section": section_name,
-                "paper_year": str(paper_year) if paper_year else ""
+                "claim_id":   str(claim_id),
+                "paper_id":   arxiv_id,
+                "arxiv_id":   paper_meta["arxiv_id"],
+                "section":    section_name,
+                "paper_year": paper_year if paper_year is not None else 0,
             })
 
             claims_extracted += 1

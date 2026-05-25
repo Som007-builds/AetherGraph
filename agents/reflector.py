@@ -77,7 +77,6 @@ def reflect(question: str, context: dict) -> dict:
     try:
         result = json.loads(raw)
     except json.JSONDecodeError:
-        # Try to find and parse JSON object
         start = raw.find("{")
         end = raw.rfind("}") + 1
         if start != -1 and end > start:

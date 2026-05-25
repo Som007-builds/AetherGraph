@@ -1,3 +1,10 @@
+# agents/contradiction.py
+"""
+PHASE 6 CHANGE:
+  run_contradiction_detection() now calls recalculate_all() after every
+  detection run so claim confidence scores are always up to date after
+  new CONTRADICTS/SUPPORTS edges are created.
+"""
 import json
 from config import CONTRADICTION_THRESHOLD
 from graph.neo4j_queries import get_all_claims, insert_relationship, get_contradictions
@@ -44,7 +51,7 @@ def check_pair(claim_a: dict, claim_b: dict) -> dict | None:
         claim_a=claim_a["text"],
         paper_a=claim_a["paper_title"],
         claim_b=claim_b["text"],
-        paper_b=claim_b["paper_title"]
+        paper_b=claim_b["paper_title"],
     )
 
     raw = call_llm(prompt, max_tokens=500)
@@ -73,7 +80,7 @@ def check_pair(claim_a: dict, claim_b: dict) -> dict | None:
         return None
 
 
-def run_contradiction_detection():
+def run_contradiction_detection() -> int:
     all_claims = get_all_claims()
     print(f"Running contradiction detection on {len(all_claims)} claims...")
 
@@ -84,11 +91,11 @@ def run_contradiction_detection():
         similar = find_similar_claims(claim["text"], n_results=8)
 
         for sim in similar:
-            other_claim_id = sim["doc_id"]
-            if other_claim_id.startswith("claim_"):
-                other_claim_id = other_claim_id[len("claim_"):]
+            # Neo4j 5+ returns string elementIds — do NOT cast to int
+            other_claim_id = sim["doc_id"].replace("claim_", "")
 
-            pair_key = tuple(sorted([str(claim["id"]), str(other_claim_id)]))
+            # Both ids are strings — sorted() is safe
+            pair_key = tuple(sorted([str(claim["id"]), other_claim_id]))
             if pair_key in pairs_checked:
                 continue
             pairs_checked.add(pair_key)
@@ -110,7 +117,7 @@ def run_contradiction_detection():
                 claim_b_id=other_claim_id,
                 rel_type=result["relationship"],
                 explanation=result["explanation"],
-                confidence=result["confidence"]
+                confidence=result["confidence"],
             )
 
             relationships_found += 1
@@ -122,6 +129,25 @@ def run_contradiction_detection():
                 print(f"  Reason: {result['explanation']}")
 
     print(f"\nDone. Found {relationships_found} relationships.")
+
+    # Phase 6: recalculate confidence scores now that new edges exist
+    print("\nRecalculating claim confidence scores...")
+    try:
+        from agents.confidence_updater import recalculate_all
+        summary = recalculate_all()
+        print(
+            f"  Updated {summary['total_updated']} claims: "
+            f"{summary['boosted']} boosted, "
+            f"{summary['penalized']} penalized, "
+            f"{summary['unchanged']} unchanged"
+        )
+        if summary.get("most_penalized"):
+            mp = summary["most_penalized"]
+            print(f"  Most penalized: {mp['text'][:60]}... "
+                  f"({mp['base']:.2f} → {mp['new']:.2f})")
+    except Exception as e:
+        print(f"  Warning: confidence recalculation failed — {e}")
+
     return relationships_found
 
 

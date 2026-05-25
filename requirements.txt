@@ -1,11 +1,35 @@
-arxiv>=2.1.0
-pymupdf>=1.23.0
-chromadb>=0.4.0
+# requirements.txt — SciMesh / AetherGraph
+# Updated: Phase 6
+#
+# AUDIT FIX (§4 ⚠️ Missing Dependencies):
+#   Added neo4j, apscheduler, pyvis, plotly — all were imported in
+#   production/UI code but absent from requirements, causing silent
+#   environment failures for new contributors.
+
+# ── Core LLM / API ────────────────────────────────────────────
 anthropic>=0.25.0
-sqlalchemy>=2.0.0
-streamlit>=1.32.0
+groq>=0.9.0
+google-genai>=0.8.0
+
+# ── Graph database ────────────────────────────────────────────
+neo4j>=5.0.0                   # graph/neo4j_client.py  ← was missing
+
+# ── Vector store ──────────────────────────────────────────────
+chromadb>=0.4.22
+sentence-transformers>=2.6.0
+
+# ── PDF / document ingestion ──────────────────────────────────
+pymupdf>=1.24.0
+requests>=2.31.0
+
+# ── Scheduling ────────────────────────────────────────────────
+apscheduler>=3.10.0            # ingestion/scheduler.py ← was missing
+
+# ── UI ────────────────────────────────────────────────────────
+streamlit>=1.33.0
+pyvis>=0.3.2                   # ui/graph_viz.py        ← was missing
+plotly>=5.20.0                 # ui/timeline.py         ← was missing
+
+# ── Utilities ─────────────────────────────────────────────────
 python-dotenv>=1.0.0
-pytest>=8.0.0
-sentence-transformers>=2.0.0
-groq>=0.4.0
-google-genai>=1.0.0
+tenacity>=8.2.0
