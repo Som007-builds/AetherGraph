@@ -178,6 +178,7 @@ def get_most_changed_claims(limit: int = 10) -> list[dict]:
         ORDER BY abs(delta) DESC
         LIMIT $limit
         RETURN
+            elementId(c)                             AS claim_id,
             c.text                                   AS text,
             c.base_confidence                        AS base,
             c.confidence                             AS current,

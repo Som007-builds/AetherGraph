@@ -123,8 +123,21 @@ def format_report(question: str, result: dict, iterations_taken: int) -> str:
         lines.append(f"\n**{d.get('topic', '')}**")
         pa = d.get("position_a", {})
         pb = d.get("position_b", {})
-        lines.append(f"  - [{pa.get('paper', '?')}] {pa.get('claim', '')}")
-        lines.append(f"  - [{pb.get('paper', '?')}] {pb.get('claim', '')}")
+        
+        if isinstance(pa, str):
+            pa_paper, pa_claim = "?", pa
+        else:
+            pa_paper = pa.get('paper', '?') if isinstance(pa, dict) else '?'
+            pa_claim = pa.get('claim', '') if isinstance(pa, dict) else ''
+
+        if isinstance(pb, str):
+            pb_paper, pb_claim = "?", pb
+        else:
+            pb_paper = pb.get('paper', '?') if isinstance(pb, dict) else '?'
+            pb_claim = pb.get('claim', '') if isinstance(pb, dict) else ''
+
+        lines.append(f"  - [{pa_paper}] {pa_claim}")
+        lines.append(f"  - [{pb_paper}] {pb_claim}")
 
     if not result.get("disputed"):
         lines.append("- No contradictions found for this topic.")

@@ -1,7 +1,29 @@
+# Environment
 .env
 venv/
-data/papers/
-data/db/
 __pycache__/
 *.pyc
 .DS_Store
+.pytest_cache/
+
+# Data (local only)
+data/papers/
+data/db/
+
+# Audit / internal docs
+SYSTEM_AUDIT_*.md
+PHASE_*_AUDIT.md
+
+# Frontend build artifacts
+axion/node_modules/
+axion/.next/
+axion/out/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db

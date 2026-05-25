@@ -1,0 +1,215 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+/* Resend-inspired SciMesh theme - always dark */
+:root {
+  /* Surfaces */
+  --background: #000000;
+  --foreground: #f0f0f0;
+  --card: #0b0e14;
+  --card-foreground: #f0f0f0;
+  --popover: #0b0e14;
+  --popover-foreground: #f0f0f0;
+  
+  /* Primary action - electric blue (outline only) */
+  --primary: #3b9eff;
+  --primary-foreground: #ffffff;
+  
+  /* Secondary - ghost style */
+  --secondary: transparent;
+  --secondary-foreground: #a1a4a5;
+  
+  /* Muted text */
+  --muted: #1b1b1b;
+  --muted-foreground: #6c6c6c;
+  
+  /* Accent */
+  --accent: #1b1b1b;
+  --accent-foreground: #f0f0f0;
+  
+  /* Destructive / Errors - soft red */
+  --destructive: #ff9592;
+  --destructive-foreground: #ff9592;
+  
+  /* Borders - hairline gray */
+  --border: #292d30;
+  --input: #292d30;
+  --ring: #3b9eff;
+  
+  /* Status colors for data visualization */
+  --status-success: #3ad389;
+  --status-warning: #ffca16;
+  --status-error: #ff9592;
+  --status-info: #70b8ff;
+  --status-violet: #9281f7;
+  --status-lavender: #baa7ff;
+  
+  /* Charts */
+  --chart-1: #3ad389;
+  --chart-2: #70b8ff;
+  --chart-3: #9281f7;
+  --chart-4: #ffca16;
+  --chart-5: #ff9592;
+  
+  /* Radius */
+  --radius: 0.375rem;
+  
+  /* Sidebar */
+  --sidebar: #000000;
+  --sidebar-foreground: #f0f0f0;
+  --sidebar-primary: #3b9eff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1b1b1b;
+  --sidebar-accent-foreground: #f0f0f0;
+  --sidebar-border: #292d30;
+  --sidebar-ring: #3b9eff;
+}
+
+/* Dark mode is always active */
+.dark {
+  --background: #000000;
+  --foreground: #f0f0f0;
+  --card: #0b0e14;
+  --card-foreground: #f0f0f0;
+  --popover: #0b0e14;
+  --popover-foreground: #f0f0f0;
+  --primary: #3b9eff;
+  --primary-foreground: #ffffff;
+  --secondary: transparent;
+  --secondary-foreground: #a1a4a5;
+  --muted: #1b1b1b;
+  --muted-foreground: #6c6c6c;
+  --accent: #1b1b1b;
+  --accent-foreground: #f0f0f0;
+  --destructive: #ff9592;
+  --destructive-foreground: #ff9592;
+  --border: #292d30;
+  --input: #292d30;
+  --ring: #3b9eff;
+  --chart-1: #3ad389;
+  --chart-2: #70b8ff;
+  --chart-3: #9281f7;
+  --chart-4: #ffca16;
+  --chart-5: #ff9592;
+  --sidebar: #000000;
+  --sidebar-foreground: #f0f0f0;
+  --sidebar-primary: #3b9eff;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1b1b1b;
+  --sidebar-accent-foreground: #f0f0f0;
+  --sidebar-border: #292d30;
+  --sidebar-ring: #3b9eff;
+}
+
+@theme inline {
+  --font-sans: 'Inter', 'Geist', 'Geist Fallback', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Geist Mono', 'Geist Mono Fallback', monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 8px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  
+  /* Custom status colors */
+  --color-status-success: var(--status-success);
+  --color-status-warning: var(--status-warning);
+  --color-status-error: var(--status-error);
+  --color-status-info: var(--status-info);
+  --color-status-violet: var(--status-violet);
+  --color-status-lavender: var(--status-lavender);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Custom utility classes for SciMesh */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Confidence level colors */
+  .confidence-high {
+    color: var(--status-success);
+  }
+  .confidence-medium {
+    color: var(--status-warning);
+  }
+  .confidence-low {
+    color: var(--status-error);
+  }
+  
+  /* Card with gradient overlay */
+  .card-gradient {
+    background: linear-gradient(180deg, #1b1b1b 0%, #030303 100%);
+  }
+  
+  /* Hairline border utility */
+  .border-hairline {
+    border-width: 1px;
+    border-color: var(--border);
+  }
+  
+  /* Primary button outline style */
+  .btn-primary-outline {
+    background: transparent;
+    border: 1px solid var(--primary);
+    color: white;
+  }
+  .btn-primary-outline:hover {
+    box-shadow: 0 0 12px rgba(59, 158, 255, 0.3);
+  }
+  
+  /* Pulsing indicator for active ingestion */
+  .pulse-active {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+  
+  @keyframes pulse-glow {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+}
