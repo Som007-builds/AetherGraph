@@ -32,14 +32,20 @@ const VIEW_DESCRIPTIONS: Record<AxionView, string> = {
 }
 
 export default function AxionWorkspace() {
+  const [mounted, setMounted] = useState(false)
   const [activeView, setActiveView] = useState<AxionView>('query')
   const [ingestionOpen, setIngestionOpen] = useState(false)
   const [commandQuery, setCommandQuery] = useState<string | null>(null)
   const [recentQueries, setRecentQueries] = useState<string[]>([])
   const [queryPanelLoading, setQueryPanelLoading] = useState(false)
 
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   // Load recent queries from local storage
   useEffect(() => {
+    if (!mounted) return
     try {
       const stored = localStorage.getItem('axion-query-history')
       if (stored) {
@@ -49,7 +55,7 @@ export default function AxionWorkspace() {
         }
       }
     } catch {}
-  }, [])
+  }, [mounted])
 
   const handleCommandSubmit = useCallback((query: string) => {
     setActiveView('query')
@@ -58,6 +64,7 @@ export default function AxionWorkspace() {
 
   // Keyboard shortcuts for nav
   useEffect(() => {
+    if (!mounted) return
     function handleKeyDown(e: KeyboardEvent) {
       // Don't trigger shortcuts when typing in inputs
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
@@ -70,7 +77,31 @@ export default function AxionWorkspace() {
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [mounted])
+
+  if (!mounted) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-black">
+        <div className="flex flex-col items-center gap-4 animate-fade-up">
+          {/* Premium logo loader */}
+          <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#3b82f6] to-[#06b6d4] shadow-[0_0_50px_rgba(59,130,246,0.15)] after:absolute after:inset-0.5 after:rounded-[14px] after:bg-black/90 after:content-['']">
+            <span className="relative z-10 font-mono text-xl font-bold tracking-tighter text-white animate-pulse">
+              A
+            </span>
+          </div>
+          <div className="flex flex-col items-center gap-1.5">
+            <span className="text-[10px] text-[#475569] font-semibold tracking-[0.2em] uppercase">
+              AXION SYSTEM
+            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#3b82f6] animate-ping" />
+              <span className="text-[10px] text-[#334155] font-mono">Initializing workspace kernel...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-black">
