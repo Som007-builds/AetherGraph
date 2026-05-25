@@ -1,6 +1,10 @@
 # agents/planner.py
 import json
+import logging
 from llm import call_llm
+
+logger = logging.getLogger(__name__)
+
 
 PLANNER_PROMPT = """You are the planning agent in a multi-agent research system.
 
@@ -53,7 +57,7 @@ def make_plan(question: str) -> dict:
             try:
                 plan = json.loads(raw[start:end])
             except json.JSONDecodeError:
-                print("  [Planner] JSON parse failed, using fallback plan")
+                logger.warning("  [Planner] JSON parse failed, using fallback plan")
                 plan = {
                     "sub_queries": [question],
                     "fetch_contradictions": True,
@@ -61,7 +65,7 @@ def make_plan(question: str) -> dict:
                     "reasoning": "fallback: used question directly"
                 }
         else:
-            print("  [Planner] JSON parse failed, using fallback plan")
+            logger.warning("  [Planner] JSON parse failed, using fallback plan")
             plan = {
                 "sub_queries": [question],
                 "fetch_contradictions": True,
@@ -78,11 +82,11 @@ def make_plan(question: str) -> dict:
             cleaned_queries.append(q)
         elif isinstance(q, dict):
             extracted = list(q.values())[0] if q else question
-            print(f"  [Planner] ⚠️  Dict sub_query clamped: {q} → '{extracted}'")
+            logger.warning(f"  [Planner] ⚠️  Dict sub_query clamped: {q} → '{extracted}'")
             cleaned_queries.append(str(extracted))
         else:
             fallback = str(q)
-            print(f"  [Planner] ⚠️  Unexpected sub_query type {type(q)}: {q} → '{fallback}'")
+            logger.warning(f"  [Planner] ⚠️  Unexpected sub_query type {type(q)}: {q} → '{fallback}'")
             cleaned_queries.append(fallback)
 
     plan["sub_queries"] = cleaned_queries[:3]

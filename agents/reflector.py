@@ -1,6 +1,10 @@
 # agents/reflector.py
 import json
+import logging
 from llm import call_llm
+
+logger = logging.getLogger(__name__)
+
 
 REFLECTOR_PROMPT = """You are the reflection agent in a multi-agent research system.
 
@@ -83,7 +87,7 @@ def reflect(question: str, context: dict) -> dict:
             try:
                 result = json.loads(raw[start:end])
             except json.JSONDecodeError:
-                print("  [Reflector] JSON parse failed, defaulting to sufficient")
+                logger.warning("  [Reflector] JSON parse failed, defaulting to sufficient")
                 result = {
                     "score": 7,
                     "sufficient": True,
@@ -91,7 +95,7 @@ def reflect(question: str, context: dict) -> dict:
                     "refined_query": None
                 }
         else:
-            print("  [Reflector] JSON parse failed, defaulting to sufficient")
+            logger.warning("  [Reflector] JSON parse failed, defaulting to sufficient")
             result = {
                 "score": 7,
                 "sufficient": True,

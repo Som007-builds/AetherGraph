@@ -222,7 +222,7 @@ def run_batch_design(
         and get_experiment_for_contradiction(c["id"]) is None
     ][:max_contradictions]
 
-    print(
+    logger.info(
         f"Designing experiments for {len(candidates)} contradictions "
         f"(confidence >= {min_contradiction_confidence})..."
     )
@@ -232,7 +232,7 @@ def run_batch_design(
     for i, contradiction in enumerate(candidates):
         snippet = (contradiction.get("explanation") or "")[:60]
 
-        print(f"  [{i+1}/{len(candidates)}] {snippet}...")
+        logger.info(f"  [{i+1}/{len(candidates)}] {snippet}...")
 
         experiment = design_experiment(contradiction)
 
@@ -240,6 +240,6 @@ def run_batch_design(
             store_experiment(contradiction["id"], experiment)
             designed.append(experiment)
 
-    print(f"Done. Designed {len(designed)} experiments.")
+    logger.info(f"Done. Designed {len(designed)} experiments.")
 
     return designed

@@ -55,6 +55,8 @@ class ExperimentModel(BaseModel):
     decision_rule: str
     caveats: list[str]
     design_confidence: float
+    metric: Optional[str] = None
+
 
 
 class GapModel(BaseModel):

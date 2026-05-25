@@ -1,7 +1,11 @@
 import json
+import logging
 from graph.neo4j_queries import get_all_claims, insert_gap, get_gaps
 from embeddings.store import find_similar_claims
 from llm import call_llm
+
+logger = logging.getLogger(__name__)
+
 
 FUTURE_WORK_PROMPT = """You are analyzing the "Future Work" or "Limitations" section of an AI research paper.
 
@@ -93,10 +97,10 @@ def extract_future_work_gaps(section_text: str) -> list:
                 related_claim_ids=related_claim_ids
             )
             gap_ids.append(gap_id)
-            print(f"  Gap (future_work, {len(related_claim_ids)} links): {question[:70]}")
+            logger.info(f"  Gap (future_work, {len(related_claim_ids)} links): {question[:70]}")
 
     except Exception as e:
-        print(f"  Warning: future work gap parsing error — {e}")
+        logger.warning(f"  Warning: future work gap parsing error — {e}")
 
     return gap_ids
 
@@ -108,7 +112,7 @@ def find_cluster_gaps(n_clusters: int = 10) -> list:
     """
     all_claims = get_all_claims()
     if len(all_claims) < 5:
-        print("  Not enough claims in DB. Run ingestion first.")
+        logger.warning("  Not enough claims in DB. Run ingestion first.")
         return []
 
     step = max(1, len(all_claims) // n_clusters)
@@ -152,10 +156,10 @@ def find_cluster_gaps(n_clusters: int = 10) -> list:
                 related_claim_ids=cluster_claim_ids
             )
             gap_ids.append(gap_id)
-            print(f"  Gap (cluster, {len(cluster_claim_ids)} links): {gap_text[:70]}")
+            logger.info(f"  Gap (cluster, {len(cluster_claim_ids)} links): {gap_text[:70]}")
 
         except Exception as e:
-            print(f"  Warning: cluster gap error — {e}")
+            logger.warning(f"  Warning: cluster gap error — {e}")
 
     return gap_ids
 
@@ -164,11 +168,11 @@ def run_gap_finding():
     """Main entry point for gap finding."""
     total_gaps = 0
 
-    print("Finding cluster gaps...")
+    logger.info("Finding cluster gaps...")
     cluster_gap_ids = find_cluster_gaps(n_clusters=10)
     total_gaps += len(cluster_gap_ids)
 
-    print(f"\nTotal gaps found: {total_gaps}")
+    logger.info(f"\nTotal gaps found: {total_gaps}")
     return total_gaps
 
 

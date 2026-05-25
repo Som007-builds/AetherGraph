@@ -9,6 +9,7 @@ PHASE 6 CHANGE:
   (migrate_base_confidence.py still handles existing claims in the graph.)
 """
 import json
+import logging
 from pathlib import Path
 from config import MAX_CLAIMS_PER_PAPER
 from llm import call_llm
@@ -16,6 +17,9 @@ from ingestion.pdf_parser import extract_sections, chunk_text
 from graph.neo4j_queries import insert_paper, insert_claim, get_paper_by_arxiv_id
 from graph.neo4j_client import run_write
 from embeddings.store import add_claim, add_chunk
+
+logger = logging.getLogger(__name__)
+
 
 EXTRACTION_PROMPT = """You are a research analyst extracting specific, falsifiable claims from an AI/ML research paper.
 
@@ -73,7 +77,7 @@ def extract_claims_from_section(section_text: str, section_name: str) -> list[di
                 return data.get("claims", [])
             except json.JSONDecodeError:
                 pass
-        print(f"  Warning: Could not parse claims from section {section_name}")
+        logger.warning(f"  Warning: Could not parse claims from section {section_name}")
         return []
 
 
@@ -82,7 +86,7 @@ def process_paper(paper_meta: dict, pdf_path: Path) -> int:
     Full pipeline: extract text → extract claims → store in Neo4j + ChromaDB.
     Returns number of claims extracted.
     """
-    print(f"\nProcessing: {paper_meta['title'][:60]}")
+    logger.info(f"\nProcessing: {paper_meta['title'][:60]}")
 
     # Extract paper_year from published date
     paper_year = None
@@ -101,11 +105,11 @@ def process_paper(paper_meta: dict, pdf_path: Path) -> int:
         abstract=paper_meta["abstract"],
         published=published,
     )
-    print(f"  ArXiv ID: {arxiv_id}  Year: {paper_year}")
+    logger.info(f"  ArXiv ID: {arxiv_id}  Year: {paper_year}")
 
     # 2. Extract sections
     sections = extract_sections(pdf_path)
-    print(f"  Sections found: {list(sections.keys())}")
+    logger.info(f"  Sections found: {list(sections.keys())}")
 
     # 3. Store chunks for retrieval
     for section_name, text in sections.items():
@@ -126,7 +130,7 @@ def process_paper(paper_meta: dict, pdf_path: Path) -> int:
         if section_name not in sections:
             continue
 
-        print(f"  Extracting from: {section_name}...")
+        logger.info(f"  Extracting from: {section_name}...")
         raw_claims = extract_claims_from_section(sections[section_name], section_name)
 
         for raw_claim in raw_claims:
@@ -165,5 +169,5 @@ def process_paper(paper_meta: dict, pdf_path: Path) -> int:
 
             claims_extracted += 1
 
-    print(f"  Extracted {claims_extracted} claims total")
+    logger.info(f"  Extracted {claims_extracted} claims total")
     return claims_extracted

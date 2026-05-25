@@ -13,6 +13,7 @@ import type {
   TemporalEvolution,
   DisputeTimeline,
   GraphData,
+  CustomIngestionProgress,
 } from '@/types/axion'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -30,13 +31,18 @@ class ApiError extends Error {
 async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE}${endpoint}`
   
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-  })
+  let response: Response
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+    })
+  } catch (err) {
+    throw new ApiError(0, err instanceof Error ? err.message : 'Network error')
+  }
 
   if (!response.ok) {
     const errorText = await response.text().catch(() => 'Unknown error')
@@ -51,7 +57,7 @@ export async function getStats(): Promise<GraphStats> {
   return fetchApi<GraphStats>('/api/stats')
 }
 
-// Claims
+// Claims - available for future use (claims are currently embedded in other queries)
 export async function getClaims(
   limit = 50,
   offset = 0
@@ -137,9 +143,15 @@ export async function recalculateConfidence(): Promise<{ updated: number }> {
 }
 
 // Ingestion
-export async function triggerIngestion(): Promise<{ status: string }> {
+export async function triggerIngestion(secret?: string): Promise<{ status: string }> {
+  const headers: Record<string, string> = {}
+  const triggerSecret = secret || process.env.NEXT_PUBLIC_TRIGGER_SECRET || 'super_secret_trigger_key_default_123'
+  if (triggerSecret) {
+    headers['X-Trigger-Secret'] = triggerSecret
+  }
   return fetchApi<{ status: string }>('/api/ingestion/trigger', {
     method: 'POST',
+    headers,
   })
 }
 
@@ -147,9 +159,31 @@ export async function getIngestionStatus(): Promise<IngestionStatus> {
   return fetchApi<IngestionStatus>('/api/ingestion/status')
 }
 
+export async function runCustomIngestion(topic: string, limit: number, secret?: string): Promise<{ status: string }> {
+  const headers: Record<string, string> = {}
+  const triggerSecret = secret || process.env.NEXT_PUBLIC_TRIGGER_SECRET || 'super_secret_trigger_key_default_123'
+  if (triggerSecret) {
+    headers['X-Trigger-Secret'] = triggerSecret
+  }
+  return fetchApi<{ status: string }>('/api/ingestion/custom', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ topic, limit }),
+  })
+}
+
+export async function getIngestionProgress(): Promise<CustomIngestionProgress> {
+  return fetchApi<CustomIngestionProgress>('/api/ingestion/progress')
+}
+
 // Knowledge Graph
 export async function getGraphData(limitClaims = 100): Promise<GraphData> {
   return fetchApi<GraphData>(`/api/graph?limit_claims=${limitClaims}`)
+}
+
+// Health
+export async function getHealth(): Promise<{ status: string }> {
+  return fetchApi<{ status: string }>('/api/health')
 }
 
 // Export error class for consumers

@@ -9,6 +9,10 @@ Requires: live Neo4j + ChromaDB (same as normal usage).
 Does NOT ingest new papers or call external APIs unless you uncomment B2/B3.
 """
 import sys, os, json, math
+if sys.platform.startswith("win"):
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8")
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 PASS = []
@@ -50,8 +54,8 @@ V1_MARKERS = [
 root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 leaks = []
 for dirpath, _, filenames in os.walk(root):
-    # skip archive and venv folders
-    if any(skip in dirpath for skip in ["archive", "venv", ".venv", "__pycache__", ".git"]):
+    # skip archive, venv and tests folders
+    if any(skip in dirpath for skip in ["archive", "venv", ".venv", "__pycache__", ".git", "tests"]):
         continue
     for fname in filenames:
         if not fname.endswith(".py"):
@@ -144,7 +148,6 @@ except Exception as e:
 section("A4 · Planner observability")
 
 try:
-    import io, contextlib
     from unittest.mock import patch
     import agents.planner as planner_module
 
@@ -155,17 +158,20 @@ try:
         "reasoning": "test"
     }
 
-    buf = io.StringIO()
-    with contextlib.redirect_stdout(buf):
+    warn_calls = []
+    def mock_warning(msg, *args, **kwargs):
+        warn_calls.append(msg % args if args else msg)
+
+    with patch.object(planner_module.logger, "warning", side_effect=mock_warning):
         with patch.object(planner_module, "call_llm", return_value=json.dumps(malformed)):
             plan = planner_module.make_plan("test question")
 
-    output = buf.getvalue()
     all_strings = all(isinstance(q, str) for q in plan["sub_queries"])
+    output = "\n".join(warn_calls)
     warned = "⚠️" in output or "clamped" in output.lower()
 
     check("Dict sub_query is clamped to string", all_strings)
-    check("Planner prints warning when clamping", warned, f"stdout was: {repr(output)}")
+    check("Planner prints warning when clamping", warned, f"logger warnings were: {repr(output)}")
 
 except Exception as e:
     check("Planner dict-clamp test runnable", False, str(e))

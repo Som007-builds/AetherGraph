@@ -1,7 +1,10 @@
 import arxiv as arxiv_lib
 import time
 from pathlib import Path
+import logging
 from config import PAPERS_DIR
+
+logger = logging.getLogger(__name__)
 
 def search_papers(query: str, max_results: int = 20) -> list[dict]:
     client = arxiv_lib.Client()
@@ -31,12 +34,12 @@ def download_pdf(arxiv_id: str) -> Path:
     pdf_path = PAPERS_DIR / f"{arxiv_id}.pdf"
     
     if pdf_path.exists():
-        print(f"  Already downloaded: {arxiv_id}")
+        logger.info(f"  Already downloaded: {arxiv_id}")
         return pdf_path
 
     import urllib.request
     url = f"https://arxiv.org/pdf/{arxiv_id}"
-    print(f"  Downloading {arxiv_id}...")
+    logger.info(f"  Downloading {arxiv_id}...")
     urllib.request.urlretrieve(url, str(pdf_path))
     time.sleep(1)
     

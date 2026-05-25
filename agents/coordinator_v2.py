@@ -20,6 +20,9 @@ from agents.temporal import get_consensus_evolution
 from agents.citation import get_weighted_confidence
 from embeddings.store import find_similar_claims
 from graph.neo4j_queries import get_contradictions, get_gaps
+import logging
+
+logger = logging.getLogger(__name__)
 
 MAX_ITERATIONS = 3
 
@@ -49,7 +52,7 @@ def _get_temporal_context(question: str) -> str:
                 f"Status: {status}\n{narrative}\n"
             )
     except Exception as e:
-        print(f"  [Coordinator v2] Temporal context failed: {e}")
+        logger.warning(f"  [Coordinator v2] Temporal context failed: {e}")
 
     return ""
 
@@ -145,21 +148,19 @@ def run(research_question: str, verbose: bool = True) -> dict:
     log = []
 
     if verbose:
-        print(f"\n{'='*60}")
-        print(f"Coordinator v2 | Question: {research_question}")
-        print(f"{'='*60}")
+        logger.info(f"\n{'='*60}\nCoordinator v2 | Question: {research_question}\n{'='*60}")
 
     # ── Step 1: Plan ──────────────────────────────────────────────
     if verbose:
-        print("\n[1/4] Planner — deciding retrieval strategy...")
+        logger.info("\n[1/4] Planner — deciding retrieval strategy...")
 
     plan = make_plan(research_question)
 
     if verbose:
-        print(f"  Sub-queries: {plan['sub_queries']}")
-        print(f"  Fetch contradictions: {plan['fetch_contradictions']}")
-        print(f"  Fetch gaps: {plan['fetch_gaps']}")
-        print(f"  Reasoning: {plan['reasoning']}")
+        logger.info(f"  Sub-queries: {plan['sub_queries']}")
+        logger.info(f"  Fetch contradictions: {plan['fetch_contradictions']}")
+        logger.info(f"  Fetch gaps: {plan['fetch_gaps']}")
+        logger.info(f"  Reasoning: {plan['reasoning']}")
 
     # ── Steps 2–3: Retrieve → Reflect loop ────────────────────────
     accumulated_context = {"claims": [], "contradictions": [], "gaps": []}
@@ -170,9 +171,9 @@ def run(research_question: str, verbose: bool = True) -> dict:
         iteration += 1
 
         if verbose:
-            print(f"\n[2/4] Retriever — iteration {iteration}/{MAX_ITERATIONS}")
+            logger.info(f"\n[2/4] Retriever — iteration {iteration}/{MAX_ITERATIONS}")
             for q in current_queries:
-                print(f"  Searching: '{q}'")
+                logger.info(f"  Searching: '{q}'")
 
         iteration_context = {"claims": [], "contradictions": [], "gaps": []}
         for query in current_queries:
@@ -186,17 +187,17 @@ def run(research_question: str, verbose: bool = True) -> dict:
         accumulated_context = _merge_contexts(accumulated_context, iteration_context)
 
         if verbose:
-            print(f"  Total context: {len(accumulated_context['claims'])} claims, "
-                  f"{len(accumulated_context['contradictions'])} contradictions, "
-                  f"{len(accumulated_context['gaps'])} gaps")
+            logger.info(f"  Total context: {len(accumulated_context['claims'])} claims, "
+                        f"{len(accumulated_context['contradictions'])} contradictions, "
+                        f"{len(accumulated_context['gaps'])} gaps")
             if accumulated_context["claims"]:
                 top = accumulated_context["claims"][0]
-                print(f"  Top claim (w={top['weighted_confidence']:.3f}): "
-                      f"{top['text'][:70]}...")
+                logger.info(f"  Top claim (w={top['weighted_confidence']:.3f}): "
+                            f"{top['text'][:70]}...")
 
         # ── Step 3: Reflect ───────────────────────────────────────
         if verbose:
-            print(f"\n[3/4] Reflector — evaluating context sufficiency...")
+            logger.info(f"\n[3/4] Reflector — evaluating context sufficiency...")
 
         reflection = reflect(research_question, accumulated_context)
         log.append({
@@ -208,47 +209,45 @@ def run(research_question: str, verbose: bool = True) -> dict:
         })
 
         if verbose:
-            print(f"  Score: {reflection['score']}/10")
-            print(f"  Assessment: {reflection['assessment']}")
-            print(f"  Sufficient: {reflection['sufficient']}")
+            logger.info(f"  Score: {reflection['score']}/10")
+            logger.info(f"  Assessment: {reflection['assessment']}")
+            logger.info(f"  Sufficient: {reflection['sufficient']}")
 
         if reflection["sufficient"]:
             if verbose:
-                print(f"  → Context approved. Proceeding to synthesis.")
+                logger.info(f"  → Context approved. Proceeding to synthesis.")
             break
 
         if iteration >= MAX_ITERATIONS:
             if verbose:
-                print(f"  → Iteration limit reached. Synthesizing with available context.")
+                logger.info(f"  → Iteration limit reached. Synthesizing with available context.")
             break
 
         refined = reflection.get("refined_query")
         if refined:
             current_queries = [refined]
             if verbose:
-                print(f"  → Refining search: '{refined}'")
+                logger.info(f"  → Refining search: '{refined}'")
         else:
             if verbose:
-                print(f"  → No refined query. Proceeding to synthesis.")
+                logger.info(f"  → No refined query. Proceeding to synthesis.")
             break
 
     # ── Optional: temporal context injection ──────────────────────
     temporal_context_str = _get_temporal_context(research_question)
     if temporal_context_str and verbose:
-        print(f"\n[+] Temporal context injected")
+        logger.info(f"\n[+] Temporal context injected")
     accumulated_context["temporal_note"] = temporal_context_str
 
     # ── Step 4: Synthesize ────────────────────────────────────────
     if verbose:
-        print(f"\n[4/4] Synthesizer — writing cited report...")
+        logger.info(f"\n[4/4] Synthesizer — writing cited report...")
 
     result = synthesize(research_question, accumulated_context)
     report = format_report(research_question, result, iterations_taken=iteration)
 
     if verbose:
-        print(f"\n{'='*60}")
-        print("Report generated.")
-        print(f"{'='*60}")
+        logger.info(f"\n{'='*60}\nReport generated.\n{'='*60}")
 
     return {
         "report": report,

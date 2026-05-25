@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Loader2, FlaskConical, AlertTriangle, Clock, DollarSign, Database } from 'lucide-react'
+import { Loader2, FlaskConical, AlertTriangle, Clock, DollarSign, Database, Target } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { getExperiment, designExperiment } from '@/lib/api-client'
@@ -138,7 +138,24 @@ export function ExperimentCard({ contradictionId, hasExperiment }: ExperimentCar
         <h5 className="mb-2 text-xs font-medium uppercase tracking-wider text-[#6c6c6c]">
           Procedure
         </h5>
-        <p className="text-sm text-[#a1a4a5]">{experiment.procedure}</p>
+        {(() => {
+          const lines = experiment.procedure.split(/\r?\n/).map(l => l.trim()).filter(Boolean)
+          if (lines.length <= 1) {
+            return <p className="text-sm text-[#a1a4a5] leading-relaxed">{experiment.procedure}</p>
+          }
+          return (
+            <ol className="list-decimal pl-5 space-y-1.5 text-sm text-[#a1a4a5]">
+              {lines.map((line, i) => {
+                const clean = line.replace(/^\d+[\.\)]\s*/, '')
+                return (
+                  <li key={i} className="leading-relaxed">
+                    {clean}
+                  </li>
+                )
+              })}
+            </ol>
+          )
+        })()}
       </div>
 
       {/* Metrics */}
@@ -155,6 +172,12 @@ export function ExperimentCard({ contradictionId, hasExperiment }: ExperimentCar
           <DollarSign className="h-4 w-4 text-[#3ad389]" />
           <span>{experiment.cost}</span>
         </div>
+        {experiment.metric && (
+          <div className="flex items-center gap-2 text-[#a1a4a5]">
+            <Target className="h-4 w-4 text-[#baa7ff]" />
+            <span>{experiment.metric}</span>
+          </div>
+        )}
       </div>
 
       {/* Decision Rule */}

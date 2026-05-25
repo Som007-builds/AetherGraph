@@ -1,12 +1,17 @@
 import logging
+import os
 from datetime import datetime
+
+# Load log level from config or environment variable
+LOG_LEVEL_STR = os.getenv("LOG_LEVEL", "INFO").upper()
+LOG_LEVEL = getattr(logging, LOG_LEVEL_STR, logging.INFO)
 
 
 def get_logger(name: str):
     logger = logging.getLogger(name)
 
     if not logger.handlers:
-        logger.setLevel(logging.INFO)
+        logger.setLevel(LOG_LEVEL)
 
         handler = logging.StreamHandler()
 
@@ -16,6 +21,8 @@ def get_logger(name: str):
 
         handler.setFormatter(formatter)
         logger.addHandler(handler)
+    else:
+        logger.setLevel(LOG_LEVEL)
 
     return logger
 

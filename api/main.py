@@ -5,10 +5,28 @@ Wraps all existing Python functions as HTTP endpoints.
 Run with: uvicorn api.main:app --reload --port 8000
 """
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+import logging
+import os
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, Header
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 import json
+import config
+
+# Initialize logging configuration using LOG_LEVEL
+LOG_LEVEL_STR = os.getenv("LOG_LEVEL", "INFO").upper()
+LOG_LEVEL = getattr(logging, LOG_LEVEL_STR, logging.INFO)
+logging.basicConfig(
+    level=LOG_LEVEL,
+    format="[%(asctime)s] %(levelname)s - %(name)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 from api.models import (
     GraphStats, ClaimsResponse, ContradictionsResponse, ContradictionModel,
@@ -16,16 +34,27 @@ from api.models import (
     ConfidenceDistribution, ChangedClaim, TemporalEvolution, DisputeTimeline
 )
 
+limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
 app = FastAPI(
     title="SciMesh API",
     description="Multi-agent AI research knowledge graph",
     version="1.70"
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"error": "Internal server error", "detail": str(exc)}
+    )
 
 # Allow Next.js (3000) or React (5173) dev server to call the API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=config.ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -53,8 +82,10 @@ def format_experiment_for_frontend(exp_dict: dict) -> dict:
         "cost": e.get("cost_estimate", ""),
         "decision_rule": exp_dict.get("decision_rule", ""),
         "caveats": caveats_list,
-        "design_confidence": exp_dict.get("confidence_in_design", 0.0)
+        "design_confidence": exp_dict.get("confidence_in_design", 0.0),
+        "metric": e.get("metric", "Primary metric to measure"),
     }
+
 
 
 # ─── Graph Stats ──────────────────────────────────────────────────────────────
@@ -156,7 +187,8 @@ def get_experiment(contradiction_id: str):
 
 
 @app.post("/api/experiments/{contradiction_id}/design", response_model=ExperimentModel)
-def design_experiment(contradiction_id: str):
+@limiter.limit("5/minute")
+def design_experiment(contradiction_id: str, request: Request):
     """Design an experiment for a specific contradiction on demand."""
     from graph.neo4j_queries import get_contradictions
     from agents.experiment_recommender import design_experiment, store_experiment
@@ -199,14 +231,18 @@ def get_gaps(source: Optional[str] = None):
 # ─── Coordinator ──────────────────────────────────────────────────────────────
 
 @app.post("/api/query", response_model=CoordinatorOutput)
-def run_query(body: dict):
+@limiter.limit("10/minute")
+def run_query(body: dict, request: Request):
     """
     Run the coordinator v2 on a research question.
     Body: {"question": "your question here"}
     """
-    question = body.get("question", "").strip()
+    question = body.get("question", "")
+    question = question.strip()
     if not question:
         raise HTTPException(status_code=400, detail="question is required")
+    if len(question) > 500:
+        raise HTTPException(status_code=422, detail="Question must not exceed 500 characters")
 
     from agents.coordinator_v2 import run
     output = run(question, verbose=False)
@@ -344,7 +380,8 @@ def most_changed(limit: int = 10):
 
 
 @app.post("/api/confidence/recalculate")
-def recalculate_confidence():
+@limiter.limit("2/minute")
+def recalculate_confidence(request: Request):
     from agents.confidence_updater import recalculate_all
     summary = recalculate_all()
     return {"updated": summary.get("total_updated", 0)}
@@ -373,11 +410,59 @@ def ingestion_status():
 
 
 @app.post("/api/ingestion/trigger")
-def trigger_ingestion(background_tasks: BackgroundTasks):
+@limiter.limit("2/minute")
+def trigger_ingestion(background_tasks: BackgroundTasks, request: Request, x_trigger_secret: Optional[str] = Header(None)):
     """Trigger an ingestion cycle in the background."""
+    import os
+    expected_secret = os.getenv("TRIGGER_SECRET", "super_secret_trigger_key_default_123")
+    if expected_secret and x_trigger_secret != expected_secret:
+        raise HTTPException(status_code=401, detail="Invalid trigger secret")
+
     from ingestion.scheduler import trigger_now
     background_tasks.add_task(trigger_now)
     return {"status": "ingestion started in background"}
+
+
+@app.post("/api/ingestion/custom")
+@limiter.limit("5/minute")
+def trigger_custom_ingestion(
+    body: dict,
+    background_tasks: BackgroundTasks,
+    request: Request,
+    x_trigger_secret: Optional[str] = Header(None)
+):
+    """Trigger a custom ingestion cycle with a specific topic and paper count limit."""
+    import os
+    expected_secret = os.getenv("TRIGGER_SECRET", "super_secret_trigger_key_default_123")
+    if expected_secret and x_trigger_secret != expected_secret:
+        raise HTTPException(status_code=401, detail="Invalid trigger secret")
+
+    from ingestion.progress import progress_tracker
+    if progress_tracker.get_progress()["running"]:
+        raise HTTPException(status_code=409, detail="An ingestion pipeline is already running")
+
+    topic = body.get("topic", "").strip()
+    limit = body.get("limit", 5)
+
+    if not topic:
+        raise HTTPException(status_code=400, detail="topic is required")
+    try:
+        limit = int(limit)
+        if limit <= 0 or limit > 50:
+            raise ValueError()
+    except ValueError:
+        raise HTTPException(status_code=422, detail="limit must be an integer between 1 and 50")
+
+    from ingestion.scheduler import run_custom_ingestion
+    background_tasks.add_task(run_custom_ingestion, topic, limit)
+    return {"status": "custom ingestion started in background"}
+
+
+@app.get("/api/ingestion/progress")
+def get_custom_ingestion_progress():
+    """Retrieve the real-time status and logs of the active custom ingestion run."""
+    from ingestion.progress import progress_tracker
+    return progress_tracker.get_progress()
 
 
 # ─── Knowledge Graph ──────────────────────────────────────────────────────────
@@ -449,14 +534,86 @@ def get_graph_data(limit_claims: int = 100):
     return {"nodes": nodes, "edges": edges}
 
 
+# ─── Startup Validation ────────────────────────────────────────────────────────
+
+@app.on_event("startup")
+async def startup_checks():
+    logger.info("Running SciMesh backend startup checks...")
+
+    # 1. Test Neo4j connection
+    try:
+        from graph.neo4j_client import run_query
+        run_query("RETURN 1")
+        logger.info("Neo4j database connection verified.")
+    except Exception as e:
+        logger.error(f"FATAL: Neo4j database is unreachable: {e}")
+        raise RuntimeError(f"Neo4j database is unreachable: {e}")
+
+    # 2. Test ChromaDB connection
+    try:
+        from embeddings.store import collection_stats
+        collection_stats()
+        logger.info("ChromaDB vector database connection verified.")
+    except Exception as e:
+        logger.error(f"FATAL: ChromaDB database is unreachable: {e}")
+        raise RuntimeError(f"ChromaDB database is unreachable: {e}")
+
+    # 3. Log claim count and Groq model name on startup
+    try:
+        from graph.neo4j_queries import get_graph_stats
+        stats = get_graph_stats()
+        claims_count = stats.get("claims", 0)
+        
+        # Groq model name from config
+        groq_model = config.GROQ_MODEL
+        logger.info(f"SciMesh startup complete: {claims_count} claims loaded in Neo4j.")
+        logger.info(f"Active Groq LLM model configured: {groq_model}")
+    except Exception as e:
+        logger.warning(f"Failed to log database stats on startup: {e}")
+
+
 # ─── Health ───────────────────────────────────────────────────────────────────
 
 @app.get("/api/health")
 def health():
-    """Quick health check — verifies Neo4j is reachable."""
+    """Quick health check — verifies Neo4j and ChromaDB are reachable."""
+    neo4j_status = "connected"
+    chromadb_status = "connected"
+    claims_count = 0
+    errors = []
+
+    # 1. Test Neo4j
     try:
         from graph.neo4j_queries import get_graph_stats
         stats = get_graph_stats()
-        return {"status": "ok", "claims": stats.get("claims", 0)}
+        claims_count = stats.get("claims", 0)
     except Exception as e:
-        raise HTTPException(status_code=503, detail=f"Neo4j unreachable: {e}")
+        neo4j_status = "disconnected"
+        errors.append(f"Neo4j unreachable: {e}")
+
+    # 2. Test ChromaDB
+    try:
+        from embeddings.store import collection_stats
+        collection_stats()
+    except Exception as e:
+        chromadb_status = "disconnected"
+        errors.append(f"ChromaDB unreachable: {e}")
+
+    if neo4j_status == "disconnected" or chromadb_status == "disconnected":
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "degraded",
+                "neo4j": neo4j_status,
+                "chromadb": chromadb_status,
+                "claims": claims_count,
+                "errors": errors
+            }
+        )
+
+    return {
+        "status": "ok",
+        "neo4j": neo4j_status,
+        "chromadb": chromadb_status,
+        "claims": claims_count
+    }

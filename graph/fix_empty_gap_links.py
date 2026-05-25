@@ -34,19 +34,17 @@ def run():
             if not raw_id:
                 continue
 
-            # Look up by elementId string (Neo4j elementId is a string in Neo4j 5+)
+            try:
+                cid_int = int(raw_id)
+            except ValueError:
+                cid_int = -1
+
+            # Look up by elementId string or claim_id property (integer/string)
             result = run_query("""
                 MATCH (c:Claim)
-                WHERE elementId(c) = $cid
+                WHERE elementId(c) = $cid_str OR c.claim_id = $cid_int OR c.claim_id = $cid_str
                 RETURN elementId(c) AS neo_id
-            """, {"cid": raw_id})
-
-            if not result:
-                # Fallback: try matching by claim_id property (set during insert)
-                result = run_query("""
-                    MATCH (c:Claim {claim_id: $cid})
-                    RETURN elementId(c) AS neo_id
-                """, {"cid": raw_id})
+            """, {"cid_str": str(raw_id), "cid_int": cid_int})
 
             if not result:
                 continue

@@ -11,8 +11,11 @@ Usage:
 """
 import time
 import math
+import logging
 import requests
 from graph.neo4j_client import run_query, run_write
+
+logger = logging.getLogger(__name__)
 
 SEMANTIC_SCHOLAR_BASE = "https://api.semanticscholar.org/graph/v1/paper"
 REQUEST_DELAY = 1.5     # seconds between requests — stay under rate limit
@@ -42,7 +45,7 @@ def fetch_citation_count(arxiv_id: str) -> int | None:
             return 0
 
         if response.status_code == 429:
-            print(f"  [Citation] Rate limited. Waiting 30s before retry...")
+            logger.warning(f"  [Citation] Rate limited. Waiting 30s before retry...")
             time.sleep(30)
             return fetch_citation_count(arxiv_id)   # single retry
 
@@ -53,7 +56,7 @@ def fetch_citation_count(arxiv_id: str) -> int | None:
         return count
 
     except requests.RequestException as e:
-        print(f"  [Citation] Request failed for {arxiv_id}: {e}")
+        logger.error(f"  [Citation] Request failed for {arxiv_id}: {e}")
         return None
 
 
@@ -90,7 +93,7 @@ def update_all_citation_counts(delay: float = REQUEST_DELAY):
         ORDER BY p.arxiv_id
     """)
 
-    print(f"Updating citation counts for {len(papers)} papers...")
+    logger.info(f"Updating citation counts for {len(papers)} papers...")
     updated = 0
 
     for paper in papers:
@@ -98,10 +101,10 @@ def update_all_citation_counts(delay: float = REQUEST_DELAY):
         count = update_paper_citation_count(arxiv_id)
         if count is not None:
             updated += 1
-            print(f"  [{count:>6}] {(paper['title'] or arxiv_id)[:60]}")
+            logger.info(f"  [{count:>6}] {(paper['title'] or arxiv_id)[:60]}")
         time.sleep(delay)
 
-    print(f"Done. Updated {updated}/{len(papers)} papers.")
+    logger.info(f"Done. Updated {updated}/{len(papers)} papers.")
 
 
 # ─── Weighting ────────────────────────────────────────────────

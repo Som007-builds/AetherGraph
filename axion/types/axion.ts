@@ -51,6 +51,7 @@ export interface Experiment {
   decision_rule: string
   caveats: string[]
   design_confidence: number
+  metric?: string
 }
 
 export interface Gap {
@@ -154,4 +155,22 @@ export interface GraphEdge {
 export interface GraphData {
   nodes: GraphNode[]
   edges: GraphEdge[]
+}
+
+export interface CustomIngestionProgress {
+  status: 'idle' | 'searching' | 'processing' | 'contradiction' | 'confidence' | 'completed' | 'failed'
+  topic: string
+  limit: number
+  current_index: number
+  current_paper_id: string
+  current_paper_title: string
+  current_step: string
+  papers_added: number
+  claims_added: number
+  contradictions_found: number
+  percent: number
+  remaining_seconds: number
+  error_message: string
+  logs: string[]
+  running: boolean
 }

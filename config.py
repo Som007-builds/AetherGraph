@@ -41,6 +41,9 @@ NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
 NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "scimesh123")
 NEO4J_CONTAINER_NAME = os.getenv("NEO4J_CONTAINER_NAME", "scimesh-neo4j")
 
+# ─── API / CORS ──────────────────────────────────────────────
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:5173").split(",")
+
 # ─── Scheduler ───────────────────────────────────────────────
 SCHEDULER_INTERVAL_HOURS = int(os.getenv("SCHEDULER_INTERVAL_HOURS", "6"))
 SCHEDULER_PAPERS_PER_RUN = int(os.getenv("SCHEDULER_PAPERS_PER_RUN", "5"))
@@ -52,3 +55,6 @@ SCHEDULER_TOPICS = [
     "RLHF reinforcement learning human feedback"
 ]
 # Narrow topics surface better papers. Add or change as the graph grows.
+
+# ─── Security ────────────────────────────────────────────────
+TRIGGER_SECRET = os.getenv("TRIGGER_SECRET", "super_secret_trigger_key_default_123")
