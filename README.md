@@ -1,5 +1,20 @@
 # AXION
-**Claims-Native Multi-Agent Scientific Reasoning & Intelligence Engine**
+
+### Claims-Native Multi-Agent Scientific Reasoning & Intelligence Engine
+
+---
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Version-2.30--beta-blue?style=flat-square" alt="Version"/>
+  <img src="https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python"/>
+  <img src="https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=next.js" alt="Next.js"/>
+  <img src="https://img.shields.io/badge/FastAPI-0.115-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI"/>
+  <img src="https://img.shields.io/badge/Neo4j-5.x-008CC1?style=flat-square&logo=neo4j&logoColor=white" alt="Neo4j"/>
+  <img src="https://img.shields.io/badge/ChromaDB-0.5-orange?style=flat-square" alt="ChromaDB"/>
+  <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License"/>
+</p>
+
+---
 
 AXION is a multi-agent scientific reasoning platform built with FastAPI, Neo4j, ChromaDB, and Next.js. It extracts atomic, parameter-scoped, falsifiable empirical claims from ArXiv PDF publications, maps them into a property knowledge graph, and automatically audits them for logical contradictions.
 
@@ -48,17 +63,11 @@ AXION operates at the granularity of **atomic empirical assertions** instead of 
 
 AXION is structured in a decoupled three-tier architecture:
 
-### 1. Frontend (Axion UI)
-*   **Technologies:** Next.js 16, React, TypeScript, Tailwind CSS.
-*   **Role:** Immersive researcher workspace featuring force-directed 2D/3D graphs, contradiction browsers, and a stateful reasoning console tracking multi-step agent actions.
-
-### 2. Backend (FastAPI Services)
-*   **Technologies:** Python 3.10+, FastAPI, Uvicorn.
-*   **Role:** Serves REST API endpoints, manages connection pools, runs embedding calculations, and coordinates specialized Python agents (Reader, Contradiction, Gap, and Experiment Recommendations).
-
-### 3. Database Tier
-*   **Neo4j 5.x Property Graph:** Maps structural nodes (`:Paper`, `:Claim`, `:Gap`) and logical relationships (`:EXTRACTED_FROM`, `:SUPPORTS`, `:CONTRADICTS`, `:RELATED_TO`).
-*   **ChromaDB Vector Store:** Stores semantic vectors of claim texts using a local `all-MiniLM-L6-v2` Sentence-Transformer model for candidate matching.
+| Tier | Technologies | Role |
+| :--- | :--- | :--- |
+| **Frontend (Axion UI)** | Next.js 16, React, TypeScript, Tailwind CSS | Immersive researcher workspace featuring force-directed 2D/3D graphs, contradiction browsers, and a stateful reasoning console tracking multi-step agent actions. |
+| **Backend (FastAPI Services)** | Python 3.10+, FastAPI, Uvicorn | Serves REST API endpoints, manages connection pools, runs embedding calculations, and coordinates specialized Python agents. |
+| **Database Tier** | Neo4j 5.x Property Graph, ChromaDB Vector Store | Neo4j maps structural nodes and logical relationships. ChromaDB stores semantic vectors of claim texts for candidate matching. |
 
 ---
 
@@ -151,7 +160,9 @@ Open http://localhost:3000 to interact with the workspace.
 
 ## Author's Note & Transparency
 
-"I am the Systems Architect of AXION. I designed the graph topology, the multi-agent reasoning loops, and the product vision. To build this at scale, I used AI assistants (Claude, Gemini, ChatGPT) as my syntax engines to heavily accelerate the Python backend and Cypher queries. Because of this, the architecture is state-of-the-art, but the underlying code has technical debt. I am actively learning Python to fully own the backend, but I am open-sourcing this now because the scientific community needs this tool."
+> **Systems Architecture Assessment**
+> 
+> I am the Systems Architect of AXION. I designed the graph topology, the multi-agent reasoning loops, and the product vision. To build this at scale, I used AI assistants (Claude, Gemini, ChatGPT) as my syntax engines to heavily accelerate the Python backend and Cypher queries. Because of this, the architecture is state-of-the-art, but the underlying code has technical debt. I am actively learning to fully own the backend, but I am open-sourcing this now because the scientific community needs this tool.
 
 ---
 
