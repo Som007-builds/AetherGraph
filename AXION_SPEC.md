@@ -278,20 +278,20 @@ AXION stores its structured data in a Neo4j property graph.
                                    │ EXTRACTED_FROM
                                    │
        ┌───────────────────────────┴─────────────────────────────┐
- ┌────►│                          Claim                          │◄────┐
- │     │  - claim_id (String, Unique)                            │     │
- │     │  - text, section (String)                               │     │
- │     │  - confidence, base_confidence (Float)                  │     │
- │     │  - support_count, contradiction_count (Integer)         │     │
- │     └───────────────────────────▲─────────────────────────────┘     │
- │                                 │                                   │
- │ CONTRADICTS                     │ RELATED_TO                        │ SUPPORTS
- │ - explanation (String)          │                                   │ - explanation (String)
- │ - confidence (Float)            │                                   │ - confidence (Float)
- │ - experiment_design (JSON)      │                                   │
- │ - experiment_designed_at        │                                   │
- │                                 │                                   │
- └─────────────────────────────────┼───────────────────────────────────┘
+  ┌────►│                          Claim                          │◄────┐
+  │     │  - claim_id (String, Unique)                            │     │
+  │     │  - text, section (String)                               │     │
+  │     │  - confidence, base_confidence (Float)                  │     │
+  │     │  - support_count, contradiction_count (Integer)         │     │
+  └───────────────────────────▲─────────────────────────────┘     │
+                                 │                                   │
+  CONTRADICTS                     │ RELATED_TO                        │ SUPPORTS
+  - explanation (String)          │                                   │ - explanation (String)
+  - confidence (Float)            │                                   │ - confidence (Float)
+  - experiment_design (JSON)      │                                   │
+  - experiment_designed_at        │                                   │
+                                 │                                   │
+  └─────────────────────────────────┼───────────────────────────────────┘
                                    │
        ┌───────────────────────────┴─────────────────────────────┐
        │                           Gap                           │

@@ -1,29 +1,41 @@
 # Environment
 .env
 venv/
-__pycache__/
-*.pyc
-.DS_Store
-.pytest_cache/
+.venv/
 
-# Data (local only)
+# Data (too large for git)
 data/papers/
 data/db/
+data/backups/
+data/gnn_embeddings.pkl
 
-# Audit / internal docs
-SYSTEM_AUDIT_*.md
-PHASE_*_AUDIT.md
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
 
-# Frontend build artifacts
+# Neo4j
+neo4j/
+
+# Node
 axion/node_modules/
 axion/.next/
-axion/out/
+
+# OS
+.DS_Store
+Thumbs.db
 
 # IDE
 .vscode/
 .idea/
 *.swp
-*.swo
 
-# OS
-Thumbs.db
+# Test artifacts
+.pytest_cache/
+htmlcov/
+.coverage

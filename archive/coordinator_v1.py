@@ -1,5 +1,5 @@
 import json
-from graph.queries import get_all_claims, get_contradictions, get_gaps
+from archive.graph_queries_sqlite import get_all_claims, get_contradictions, get_gaps
 from embeddings.store import find_similar_claims
 from llm import call_llm
 

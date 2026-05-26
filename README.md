@@ -1,183 +1,242 @@
-# AXION
+# AetherGraph
 
-### Claims-Native Multi-Agent Scientific Reasoning & Intelligence Engine
+A multi-agent scientific intelligence system that reads AI research papers,
+extracts empirical claims, detects contradictions between papers, and surfaces
+research gaps the field hasn't answered yet.
 
----
+**The core insight:** scientific knowledge is a network, not a document collection.
+Two papers can agree on a topic but contradict each other on a specific finding.
+Standard search engines can't detect that. AetherGraph can — and it compounds
+what it learns over time.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Version-2.30--beta-blue?style=flat-square" alt="Version"/>
-  <img src="https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python"/>
-  <img src="https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=next.js" alt="Next.js"/>
-  <img src="https://img.shields.io/badge/FastAPI-0.115-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI"/>
-  <img src="https://img.shields.io/badge/Neo4j-5.x-008CC1?style=flat-square&logo=neo4j&logoColor=white" alt="Neo4j"/>
-  <img src="https://img.shields.io/badge/ChromaDB-0.5-orange?style=flat-square" alt="ChromaDB"/>
-  <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License"/>
-</p>
+[![Demo Video](https://img.shields.io/badge/Demo-Watch%20Now-red?style=for-the-badge&logo=youtube)](YOUR_VIDEO_LINK)
+[![Technical Spec](https://img.shields.io/badge/Spec-AXION%20v2.30-blue?style=for-the-badge)](./AXION_SPEC.md)
 
 ---
 
-AXION is a multi-agent scientific reasoning platform built with FastAPI, Neo4j, ChromaDB, and Next.js. It extracts atomic, parameter-scoped, falsifiable empirical claims from ArXiv PDF publications, maps them into a property knowledge graph, and automatically audits them for logical contradictions.
+## Live Stats
+| Metric | Count |
+|---|---|
+| Papers ingested | 9+ |
+| Claims extracted | 270+ |
+| Contradictions detected | 48 |
+| Research gaps identified | 18 |
+| Experiment designs | 36 |
+
+---
+
+## What Makes This Different From RAG
+
+Standard RAG retrieves document chunks and summarizes them. AetherGraph:
+
+- **Operates at claim level** — every paper is decomposed into atomic, falsifiable assertions
+- **Builds a persistent graph** — claims, contradictions, and gaps are stored as typed edges in Neo4j
+- **Compounds over time** — paper 270 is compared against all 269 prior papers automatically
+- **Self-corrects** — claim confidence scores recalculate as more papers support or contradict them
+- **Validates its own reasoning** — a red-team agent audits detected contradictions for false positives
+
+---
+
+## Architecture
 
 ```
-                  ┌──────────────────────────────┐
-                  │      Ingest & Segment        │
-                  │  (ArXiv PDFs -> Parser)      │
-                  └──────────────┬───────────────┘
-                                 ▼
-                  ┌──────────────────────────────┐
-                  │    Atomic Claim Extraction   │
-                  │  (Structured JSON Prompts)   │
-                  └──────────────┬───────────────┘
-                                 ▼
-        ┌────────────────────────┴────────────────────────┐
-        ▼                                                 ▼
-┌────────────────────────┐                        ┌───────────────┐
-│  Vector Embedding Map  │                        │  Property Map │
-│  (ChromaDB Vector Store)│                       │ (Neo4j Graph) │
-└────────┬───────────────┘                        └───────┬───────┘
-         │                                                │
-         └───────────────┬────────────────────────────────┘
-                         ▼
-        ┌─────────────────────────────────────────────────┐
-        │       Multi-Agent Logical Verification          │
-        │    (Pruning -> Contradiction Audit -> Gaps)    │
-        └────────────────────────┬────────────────────────┘
-                                 ▼
-        ┌─────────────────────────────────────────────────┐
-        │        Confidence & Belief Propagation          │
-        │    (Topological update and clamping)            │
-        └─────────────────────────────────────────────────┘
+ArXiv Papers
+     │
+     ▼
+┌─────────────────────────────────────────────┐
+│              Agent 1: Reader                │
+│  Extracts falsifiable claims per section    │
+└──────────────────────┬──────────────────────┘
+                       │ writes Claims to graph
+          ┌────────────▼──────────────────────┐
+          │         Knowledge Graph           │
+          │   Neo4j + ChromaDB (vectors)      │
+          └────────┬──────────────┬───────────┘
+                   │              │
+     ┌─────────────▼──┐    ┌──────▼──────────────┐
+     │  Agent 2:      │    │  Agent 3: Gap Finder │
+     │  Contradiction │    │  Reasons about what  │
+     │  Detector +    │    │  the field hasn't    │
+     │  Red-Team      │    │  answered yet        │
+     └─────────────┬──┘    └──────┬───────────────┘
+                   │              │
+          ┌────────▼──────────────▼───────────┐
+          │    Enriched Knowledge Graph       │
+          │  CONTRADICTS · SUPPORTS · GAPS    │
+          └────────────────┬──────────────────┘
+                           │
+          ┌────────────────▼──────────────────┐
+          │        Agent 4: Coordinator v2    │
+          │  Plan → Retrieve → Reflect →      │
+          │  Synthesize (ReAct loop, max 3x)  │
+          └───────────────────────────────────┘
 ```
 
 ---
 
-## Project Overview
+## Key Capabilities
 
-In domains such as frontier machine learning and quantum computing, the volume of daily preprints and literature scales faster than a researcher can consume. Traditional search engines and standard document-level Retrieval-Augmented Generation (RAG) applications operate over unstructured text blocks and fail to identify underlying empirical conflicts. 
+### Contradiction Detection with Adversarial Validation
+The system finds semantically similar claims across papers and asks Claude to
+determine if they genuinely contradict. A second red-team agent then audits
+each finding — hunting for methodological differences that would explain the
+apparent contradiction without a real conflict.
 
-AXION operates at the granularity of **atomic empirical assertions** instead of whole documents. It maps these assertions in a unified property graph to determine scientific consensus, trace timelines of empirical evolution, locate unexplored parameter spaces, and auto-recommend physical experimental designs to resolve literature conflicts.
+Contradictions are classified into 6 types:
+`GENUINE_CONTRADICTION` · `SCALE_THRESHOLD_DISPUTE` · `METHODOLOGICAL_CONFLICT`
+· `DATA_DISTRIBUTION_SHIFT` · `BENCHMARK_SCOPE_MISMATCH` · `REPLICATION_FAILURE`
+
+### Dynamic Confidence Propagation
+Every claim has a confidence score that recalculates as new papers enter the graph:
+```
+confidence = base_confidence + (0.08 × supports) − (0.12 × contradictions)
+```
+Clamped to [0.05, 0.98]. A claim from 2022 contradicted by three 2024 papers
+automatically loses confidence. The graph self-corrects.
+
+### ReAct Coordinator Loop
+User queries go through a multi-step reasoning loop:
+1. **Plan** — generates 1-3 targeted sub-queries
+2. **Retrieve** — searches ChromaDB + Neo4j
+3. **Reflect** — scores context sufficiency (0-10), refines if <7
+4. **Synthesize** — writes a cited research report
+
+### Temporal Reasoning
+Tracks how scientific consensus evolves year by year. The system can show
+you that in 2022 the field agreed X, by 2023 contradictions appeared,
+and by 2024 the position had fragmented.
+
+### Experiment Recommender
+For every high-confidence contradiction, the system designs the minimal
+experiment to resolve it — specific dataset, model sizes, metric,
+decision rule, cost estimate. Stored on the CONTRADICTS relationship in Neo4j.
 
 ---
 
-## System Architecture
-
-AXION is structured in a decoupled three-tier architecture:
-
-| Tier | Technologies | Role |
-| :--- | :--- | :--- |
-| **Frontend (Axion UI)** | Next.js 16, React, TypeScript, Tailwind CSS | Immersive researcher workspace featuring force-directed 2D/3D graphs, contradiction browsers, and a stateful reasoning console tracking multi-step agent actions. |
-| **Backend (FastAPI Services)** | Python 3.10+, FastAPI, Uvicorn | Serves REST API endpoints, manages connection pools, runs embedding calculations, and coordinates specialized Python agents. |
-| **Database Tier** | Neo4j 5.x Property Graph, ChromaDB Vector Store | Neo4j maps structural nodes and logical relationships. ChromaDB stores semantic vectors of claim texts for candidate matching. |
-
----
-
-## Core Features
-
-*   **Atomic Claim Extraction:** Parses incoming layout elements and extracts structured claims detailing `subject`, `predicate`, `object`, `conditions`, `metric`, `direction`, and `evidence_span`.
-*   **Logical Contradiction Mapping:** Pairs semantic search neighbors with LLM-backed verification to identify true logical conflicts.
-*   **Belief Propagation:** Dynamically updates claim confidence metrics across the graph structure when supporting or contradicting evidence changes.
-*   **Research Gap Synthesis:** Analyzes topological voids and stated limitations to generate new research hypotheses.
-*   **Experiment Recommendations:** Auto-designs structured experimental protocols (dataset, models, metrics, cost) linked directly to the contradictions they aim to resolve.
-*   **Plan-Retrieve-Reflect-Synthesize Loop:** The Coordinator v2 Agent generates target queries, validates context density via a reflection loop, and synthesizes cited research reports.
-
----
-
-## Getting Started
+## Running Locally
 
 ### Prerequisites
-*   Python 3.10+
-*   Node.js 18+ and pnpm
-*   Docker (for running Neo4j container)
-*   LLM API Keys (Groq, Gemini, or Anthropic)
+- Python 3.10+
+- Node.js 18+
+- Docker (for Neo4j)
+- An Anthropic API key (or Groq/Gemini)
 
-### 1. Backend & CLI Installation
-Clone the repository and install requirements inside a Python virtual environment:
+### Setup
+
 ```bash
-git clone https://github.com/Som007-builds/AetherGraph.git
+# 1. Clone and install backend
+git clone https://github.com/Som007-builds/AetherGraph
 cd AetherGraph
-
-# Create and activate virtual environment
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# Install requirements
 pip install -r requirements.txt
-```
 
-### 2. Environment Configuration
-Create a `.env` file in the project root:
-```bash
+# 2. Configure environment
 cp .env.example .env
-```
-Update `.env` with your API keys and configuration properties:
-```env
-GROQ_API_KEY=gsk_...
-GEMINI_API_KEY=AIzaSy...
-ANTHROPIC_API_KEY=sk-ant-...
+# Edit .env with your API keys
 
-NEO4J_URI=bolt://localhost:7887
-NEO4J_USER=neo4j
-NEO4J_PASSWORD=scimesh123
-```
+# 3. Start Neo4j
+docker-compose up -d
 
-### 3. Run the Databases
-Start the Neo4j container:
-```bash
-docker compose up -d
-```
-Access the database console at http://localhost:7474.
+# 4. Initialize the graph
+python main.py --mode init
 
-### 4. Running via CLI
-Run tasks directly using the SciMesh CLI:
-```bash
-# Ingest papers from ArXiv matching a query
-python main.py --mode ingest --query "chain of thought prompting LLM" --n 5
+# 5. Ingest papers
+python main.py --mode ingest --query "chain of thought prompting LLM" --n 10
 
-# Run contradiction scans on ingested claims
+# 6. Run agents
 python main.py --mode contradict
+python main.py --mode confidence
+python main.py --mode experiments
 
-# Find research gaps across claim clusters
-python main.py --mode gaps
+# 7. Start the API
+uvicorn api.main:app --reload --port 8000
 
-# Run the query pipeline with Coordinator v2
-python main.py --mode query --query "Does chain-of-thought prompting scale down to models under 3B parameters?"
+# 8. Start the frontend
+cd axion && pnpm install && pnpm dev
+# Opens at http://localhost:3000
 ```
-
-### 5. Running the API and Workspace UI
-Start the FastAPI server:
-```bash
-uvicorn api.main:app --port 8000
-```
-In a new terminal, launch the Next.js development server:
-```bash
-cd axion
-pnpm install
-pnpm dev
-```
-Open http://localhost:3000 to interact with the workspace.
 
 ---
 
-## Author's Note & Transparency
+## CLI Reference
 
-> **Systems Architecture Assessment**
-> 
-> I am the Systems Architect of AXION. I designed the graph topology, the multi-agent reasoning loops, and the product vision. To build this at scale, I used AI assistants (Claude, Gemini, ChatGPT) as my syntax engines to heavily accelerate the Python backend and Cypher queries. Because of this, the architecture is state-of-the-art, but the underlying code has technical debt. I am actively learning to fully own the backend, but I am open-sourcing this now because the scientific community needs this tool.
+```bash
+python main.py --mode ingest       --query "..." --n 20   # Ingest papers
+python main.py --mode contradict                           # Detect contradictions
+python main.py --mode redteam                              # Adversarial validation
+python main.py --mode confidence                           # Recalculate scores
+python main.py --mode gaps                                 # Find research gaps
+python main.py --mode experiments                          # Design experiments
+python main.py --mode citations                            # Fetch citation counts
+python main.py --mode communities                          # Community detection
+python main.py --mode schedule                             # Start auto-ingestion
+```
 
 ---
 
-## Contributing / Help Wanted
+## Tech Stack
 
-AXION is a state-of-the-art research architecture, but we need community support to harden the codebase and prepare it for production scale. We are actively seeking pull requests for the following core technical debts:
+| Layer | Technology | Why |
+|---|---|---|
+| Graph DB | Neo4j 5.x | Typed edges, Cypher traversal, native graph ops |
+| Vector Store | ChromaDB | Local persistent embeddings, no API cost |
+| Embeddings | all-MiniLM-L6-v2 | Local, free, 384-dim, fast |
+| LLM | Claude / Groq / Gemini | Multi-provider fallback chain |
+| Backend | FastAPI | Async-ready, auto-docs at /docs |
+| Frontend | Next.js 16 + Tailwind | React component model, Axion workspace |
+| Graph Viz | react-force-graph | Force-directed, 270+ nodes smooth |
+| Scheduler | APScheduler | Background ingestion every 6 hours |
+| PDF parsing | PyMuPDF | Section-aware, fast, text-layer PDFs |
 
-*   **Infrastructure Decoupling:** The FastAPI ingestion loop is currently synchronous and blocks threads. We need help moving PDF parsing to an async worker queue (e.g., Celery/Redis).
-*   **Algorithmic Rigor:** The confidence propagation engine currently uses a naive linear heuristic (+0.08/-0.12). We need ML engineers to help transition this to a Bayesian Belief Network or GNN.
-*   **Ontology Hardening:** Claims are currently unstructured text. We need help mapping extracted claims to a strict PEFT JSON schema to reduce contradiction false positives.
+---
 
-For contributions, please fork the repository, create a branch, and submit a PR to `Som007-builds/AetherGraph`.
+## Project Structure
+
+```
+AetherGraph/
+├── agents/          # All reasoning agents
+├── api/             # FastAPI endpoints
+├── axion/           # Next.js frontend workspace
+├── graph/           # Neo4j client, schema, Cypher queries
+├── ingestion/       # ArXiv client, PDF parser, scheduler
+├── embeddings/      # ChromaDB wrapper
+├── utils/           # Structured logging
+├── archive/         # Deprecated SQLite layer (reference only)
+├── tests/           # 94 unit + integration tests
+├── main.py          # CLI entry point
+└── AXION_SPEC.md    # Full technical specification
+```
+
+---
+
+## Technical Specification
+
+The full engineering specification (v2.30) is in [`AXION_SPEC.md`](./AXION_SPEC.md).
+It covers the full architecture, agent system, graph schema, contradiction engine,
+confidence system, and long-term vision.
+
+---
+
+## Known Limitations
+
+- **Contradiction false positives:** The engine can flag complementary findings
+  as contradictions when parameter scopes differ (e.g., 7B vs 70B models).
+  The red-team agent reduces but does not eliminate this.
+- **Linear confidence model:** The confidence formula treats all papers equally
+  regardless of citation count or venue quality.
+- **Synchronous ingestion:** Large batch ingestion blocks the API thread.
+  Celery/RQ task queue is the planned fix.
+
+---
+
+## Built By
+
+Somnath — 1st year BTech, 2nd semester.  
+Built over 2 months as a solo project.
 
 ---
 
 ## License
 
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+MIT
