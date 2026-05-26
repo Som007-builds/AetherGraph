@@ -11,7 +11,16 @@ from agents.reflector import reflect
 from agents.synthesizer import synthesize
 
 
-def test_planner_returns_valid_structure():
+def test_planner_returns_valid_structure(monkeypatch):
+    import agents.planner as planner_module
+    mock_plan = {
+        "sub_queries": ["chain of thought prompting help small models"],
+        "fetch_contradictions": True,
+        "fetch_gaps": True,
+        "reasoning": "test reasoning"
+    }
+    monkeypatch.setattr(planner_module, "call_llm", lambda *a, **kw: json.dumps(mock_plan))
+
     plan = make_plan("Does chain-of-thought prompting help small models?")
     assert "sub_queries" in plan
     assert "fetch_contradictions" in plan
@@ -35,7 +44,7 @@ def test_planner_handles_dict_subquery(monkeypatch):
         "reasoning": "test"
     }
 
-    def fake_call_llm(prompt, max_tokens=600):
+    def fake_call_llm(prompt, max_tokens=600, **kwargs):
         return json.dumps(malformed_plan)
 
     monkeypatch.setattr(planner_module, "call_llm", fake_call_llm)
@@ -46,7 +55,7 @@ def test_planner_handles_dict_subquery(monkeypatch):
         assert isinstance(q, str), f"Dict was not clamped to str: {q}"
 
 
-def test_planner_logs_dict_clamp(monkeypatch, capsys):
+def test_planner_logs_dict_clamp(monkeypatch, caplog):
     """Clamped dict sub_queries must print a warning."""
     import agents.planner as planner_module
 
@@ -58,12 +67,22 @@ def test_planner_logs_dict_clamp(monkeypatch, capsys):
     }
 
     monkeypatch.setattr(planner_module, "call_llm", lambda *a, **kw: json.dumps(malformed_plan))
-    make_plan("test")
-    captured = capsys.readouterr()
-    assert "⚠️" in captured.out or "Dict sub_query clamped" in captured.out
+    import logging
+    with caplog.at_level(logging.WARNING):
+        make_plan("test")
+    assert any("Dict sub_query clamped" in r.message or "⚠️" in r.message for r in caplog.records)
 
 
-def test_reflector_scores_empty_context_low():
+def test_reflector_scores_empty_context_low(monkeypatch):
+    import agents.reflector as reflector_module
+    mock_resp = {
+        "score": 3,
+        "sufficient": False,
+        "assessment": "empty context",
+        "refined_query": "Does CoT help small LLMs?"
+    }
+    monkeypatch.setattr(reflector_module, "call_llm", lambda *a, **kw: json.dumps(mock_resp))
+
     result = reflect(
         "Does CoT help small models?",
         {"claims": [], "contradictions": [], "gaps": []}
@@ -73,7 +92,16 @@ def test_reflector_scores_empty_context_low():
     assert result.get("refined_query") is not None
 
 
-def test_reflector_returns_valid_structure():
+def test_reflector_returns_valid_structure(monkeypatch):
+    import agents.reflector as reflector_module
+    mock_resp = {
+        "score": 8,
+        "sufficient": True,
+        "assessment": "good context",
+        "refined_query": None
+    }
+    monkeypatch.setattr(reflector_module, "call_llm", lambda *a, **kw: json.dumps(mock_resp))
+
     result = reflect("test question", {"claims": [], "contradictions": [], "gaps": []})
     assert "score" in result
     assert "sufficient" in result
@@ -81,7 +109,24 @@ def test_reflector_returns_valid_structure():
     assert 0 <= result["score"] <= 10
 
 
-def test_synthesizer_with_mock_context():
+def test_synthesizer_with_mock_context(monkeypatch):
+    import agents.synthesizer as synth_module
+    mock_synth = {
+        "consensus": [{"finding": "CoT improves GSM8K by 40% for 100B+ models.", "citations": ["2201.11903"]}],
+        "disputed": [
+            {
+                "topic": "Effect on small models",
+                "position_a": {"claim": "Helps large", "paper": "2201.11903"},
+                "position_b": {"claim": "Doesn't help small", "paper": "2302.00001"}
+            }
+        ],
+        "missing": ["What is the minimum model size for CoT to work?"],
+        "recommended_experiments": ["Ablation on small models"],
+        "confidence_in_answer": "medium",
+        "confidence_reason": ""
+    }
+    monkeypatch.setattr(synth_module, "call_llm", lambda *a, **kw: json.dumps(mock_synth))
+
     mock_context = {
         "claims": [
             {"text": "CoT improves GSM8K by 40% for 100B+ models.", "arxiv_id": "2201.11903"},

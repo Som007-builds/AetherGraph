@@ -13,6 +13,7 @@ from collections import defaultdict
 from llm import call_llm
 from graph.neo4j_queries import get_all_claims, get_contradictions
 from embeddings.store import find_similar_claims
+from utils.llm_parser import safe_json_parse
 
 
 # ─────────────────────────────────────────────────────────────
@@ -122,13 +123,12 @@ def get_consensus_evolution(topic: str, year_start: int = 2020,
         year_end=year_end
     )
 
-    raw = call_llm(prompt, max_tokens=1500)
+    raw = call_llm(prompt, max_tokens=1500, context="temporal.evolution")
 
-    try:
-        result = json.loads(raw)
-    except json.JSONDecodeError:
-        start = raw.find("{")
-        result = json.loads(raw[start:]) if start != -1 else {}
+    # Phase 1: safe_json_parse handles all malformed output forms
+    result = safe_json_parse(raw, context="temporal.evolution") or {}
+    if not isinstance(result, dict):
+        result = {}
 
     result["claims_by_year"] = {
         str(year): claims_list for year, claims_list in by_year.items()
@@ -212,12 +212,11 @@ def get_contradiction_timeline(topic: str) -> dict:
         contradiction_text=contradiction_text
     )
 
-    raw = call_llm(prompt, max_tokens=1000)
+    raw = call_llm(prompt, max_tokens=1000, context="temporal.timeline")
 
-    try:
-        result = json.loads(raw)
-    except json.JSONDecodeError:
-        start = raw.find("{")
-        result = json.loads(raw[start:]) if start != -1 else {}
+    # Phase 1: safe_json_parse
+    result = safe_json_parse(raw, context="temporal.timeline") or {}
+    if not isinstance(result, dict):
+        result = {}
 
     return result

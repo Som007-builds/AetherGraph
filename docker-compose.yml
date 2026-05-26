@@ -6,7 +6,7 @@ services:
     image: neo4j:5.18-community
     container_name: scimesh_neo4j
     ports:
-      - "7687:7687"   # Bolt protocol (what the driver uses)
+      - "7887:7687"   # Bolt protocol (what the driver uses, mapped to 7887 on host due to Windows port exclusion)
     environment:
       - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD:-scimesh123}
       - NEO4J_PLUGINS=["apoc"]

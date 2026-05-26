@@ -1,10 +1,22 @@
-import json
+# agents/gap_finder.py
+"""
+Research Gap Finder.
+
+Phase 1: All JSON parsing now uses utils.llm_parser.safe_json_parse().
+         Markdown fence stripping removed (handled centrally).
+
+Phase 2: Per-gap and per-cluster fault isolation — one failed gap never
+         stops the rest of the extraction run.
+"""
+
 import logging
 from graph.neo4j_queries import get_all_claims, insert_gap, get_gaps
 from embeddings.store import find_similar_claims
 from llm import call_llm
+from utils.llm_parser import safe_json_parse
+from utils.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 FUTURE_WORK_PROMPT = """You are analyzing the "Future Work" or "Limitations" section of an AI research paper.
@@ -56,7 +68,6 @@ def _resolve_similar_claim_ids(query_text: str, n: int = 5) -> list:
     ids = []
     for s in similar:
         doc_id = s.get("doc_id", "")
-        # doc_id format is "claim_<elementId>" — strip prefix
         raw_id = doc_id.replace("claim_", "")
         if raw_id:
             ids.append(raw_id)
@@ -66,31 +77,29 @@ def _resolve_similar_claim_ids(query_text: str, n: int = 5) -> list:
 def extract_future_work_gaps(section_text: str) -> list:
     """
     Mine future work / limitations sections for open questions.
-    Each gap is now auto-linked to the 5 most semantically similar claims
-    in ChromaDB so it surfaces in coordinator filtering.
+    Each gap is auto-linked to the 5 most semantically similar claims.
     Returns list of gap_ids inserted.
     """
     if len(section_text.strip()) < 50:
         return []
 
     prompt = FUTURE_WORK_PROMPT.format(text=section_text[:2000])
-    raw = call_llm(prompt, max_tokens=800)
+    raw = call_llm(prompt, max_tokens=800, context="gap_finder.future_work")
 
-    if "```" in raw:
-        raw = raw.split("```")[1]
-        if raw.startswith("json"):
-            raw = raw[4:]
+    # Phase 1: safe_json_parse — handles markdown fences, partial JSON, etc.
+    data = safe_json_parse(raw, context="gap_finder.future_work")
 
     gap_ids = []
-    try:
-        data = json.loads(raw)
-        for question in data.get("open_questions", []):
-            if len(question) < 20:
-                continue
+    if not data or not isinstance(data, dict):
+        logger.warning("  [gap_finder] future_work: parse returned no usable data.")
+        return gap_ids
 
-            # Auto-link to semantically similar claims — fixes empty related_claims
+    for question in data.get("open_questions", []):
+        if not isinstance(question, str) or len(question) < 20:
+            continue
+        # Phase 2: per-gap fault isolation
+        try:
             related_claim_ids = _resolve_similar_claim_ids(question, n=5)
-
             gap_id = insert_gap(
                 text=question,
                 source="future_work",
@@ -98,17 +107,16 @@ def extract_future_work_gaps(section_text: str) -> list:
             )
             gap_ids.append(gap_id)
             logger.info(f"  Gap (future_work, {len(related_claim_ids)} links): {question[:70]}")
-
-    except Exception as e:
-        logger.warning(f"  Warning: future work gap parsing error — {e}")
+        except Exception as e:
+            logger.warning(f"  [gap_finder] future_work gap insert failed: {e}")
 
     return gap_ids
 
 
 def find_cluster_gaps(n_clusters: int = 10) -> list:
     """
-    For a sample of claims, get their neighbors and ask the LLM
-    what research question the cluster circles but never answers.
+    For a sample of claims, get their semantic neighbors and ask the LLM
+    what research question the cluster circles but never directly answers.
     """
     all_claims = get_all_claims()
     if len(all_claims) < 5:
@@ -135,21 +143,21 @@ def find_cluster_gaps(n_clusters: int = 10) -> list:
                 cluster_claim_ids.append(raw_id)
 
         prompt = CLUSTER_GAP_PROMPT.format(claims=claims_text)
-        raw = call_llm(prompt, max_tokens=500)
+        raw = call_llm(prompt, max_tokens=500, context="gap_finder.cluster")
 
-        if "```" in raw:
-            raw = raw.split("```")[1]
-            if raw.startswith("json"):
-                raw = raw[4:]
+        # Phase 1: safe_json_parse
+        data = safe_json_parse(raw, context="gap_finder.cluster")
+        if not data or not isinstance(data, dict):
+            continue
 
+        gap_text = data.get("gap", "")
+        confidence = data.get("confidence", 0)
+
+        if not isinstance(gap_text, str) or len(gap_text) < 20 or confidence < 0.5:
+            continue
+
+        # Phase 2: per-cluster fault isolation
         try:
-            data = json.loads(raw)
-            gap_text = data.get("gap", "")
-            confidence = data.get("confidence", 0)
-
-            if len(gap_text) < 20 or confidence < 0.5:
-                continue
-
             gap_id = insert_gap(
                 text=gap_text,
                 source="cluster",
@@ -157,9 +165,8 @@ def find_cluster_gaps(n_clusters: int = 10) -> list:
             )
             gap_ids.append(gap_id)
             logger.info(f"  Gap (cluster, {len(cluster_claim_ids)} links): {gap_text[:70]}")
-
         except Exception as e:
-            logger.warning(f"  Warning: cluster gap error — {e}")
+            logger.warning(f"  [gap_finder] cluster gap insert failed: {e}")
 
     return gap_ids
 

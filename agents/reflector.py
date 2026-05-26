@@ -76,7 +76,7 @@ def reflect(question: str, context: dict) -> dict:
         gaps_text=gaps_text
     )
 
-    raw = call_llm(prompt, max_tokens=400)
+    raw = call_llm(prompt, max_tokens=400, context="reflector")
 
     try:
         result = json.loads(raw)

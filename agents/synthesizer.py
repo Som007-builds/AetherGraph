@@ -1,6 +1,10 @@
 # agents/synthesizer.py
-import json
+import logging
 from llm import call_llm
+from utils.llm_parser import safe_json_parse
+from utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 SYNTHESIZER_PROMPT = """You are the synthesis agent in a multi-agent research system.
 
@@ -88,13 +92,20 @@ def synthesize(question: str, context: dict) -> dict:
             f"Incorporate this timeline perspective into your consensus and disputed sections."
         )
 
-    raw = call_llm(prompt, max_tokens=2000)
+    raw = call_llm(prompt, max_tokens=2000, context="synthesizer")
 
-    try:
-        result = json.loads(raw)
-    except json.JSONDecodeError:
-        start = raw.find("{")
-        result = json.loads(raw[start:]) if start != -1 else {}
+    # Phase 1: safe_json_parse — graceful degradation on malformed output
+    result = safe_json_parse(raw, context="synthesizer")
+    if result is None or not isinstance(result, dict):
+        logger.warning("[synthesizer] JSON parse failed; returning empty synthesis.")
+        result = {
+            "consensus": [],
+            "disputed": [],
+            "missing": [],
+            "recommended_experiments": [],
+            "confidence_in_answer": "low",
+            "confidence_reason": "synthesis failed due to LLM output parse error",
+        }
 
     return result
 

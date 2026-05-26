@@ -57,33 +57,72 @@ def get_paper_by_arxiv_id(arxiv_id: str) -> dict | None:
 
 def insert_claim(paper_id: str, claim_text: str, section: str,
                  confidence: float = 1.0, embedding_id: str = None,
-                 paper_year: int = None) -> int:
+                 paper_year: int = None, structured: dict = None) -> str:
     """
     Insert a claim and link it to its paper.
     paper_id is arxiv_id in Neo4j (not SQLite int).
-    Returns a synthetic int ID based on Neo4j internal id for ChromaDB compat.
+    Returns the Neo4j elementId string.
+
+    Phase 4: `structured` dict may contain:
+        subject, predicate, object_val, metric, direction, evidence_span, conditions (JSON str)
+    Old callers without `structured` are fully backward-compatible.
     """
+    import json as _json
+
+    # Build base properties
+    props = {
+        "arxiv_id":     paper_id,
+        "text":         claim_text,
+        "section":      section,
+        "confidence":   confidence,
+        "embedding_id": embedding_id or "",
+        "paper_year":   paper_year,
+        "subject":      "",
+        "predicate":    "",
+        "object_val":   "",
+        "metric":       "",
+        "direction":    "unclear",
+        "evidence_span": "",
+        "conditions":   "{}",
+    }
+
+    if structured and isinstance(structured, dict):
+        for field in ("subject", "predicate", "metric", "direction", "evidence_span"):
+            val = structured.get(field)
+            if val and isinstance(val, str):
+                props[field] = val.strip()
+        # "object" is a reserved Cypher keyword — stored as "object_val"
+        obj_val = structured.get("object") or structured.get("object_val")
+        if obj_val and isinstance(obj_val, str):
+            props["object_val"] = obj_val.strip()
+        cond = structured.get("conditions")
+        if cond and isinstance(cond, dict):
+            props["conditions"] = _json.dumps(cond)
+        elif cond and isinstance(cond, str):
+            props["conditions"] = cond
+
     result = run_write("""
         MATCH (p:Paper {arxiv_id: $arxiv_id})
         CREATE (c:Claim {
-            text: $text,
-            section: $section,
-            confidence: $confidence,
+            text:         $text,
+            section:      $section,
+            confidence:   $confidence,
             embedding_id: $embedding_id,
-            paper_year: $paper_year
+            paper_year:   $paper_year,
+            subject:      $subject,
+            predicate:    $predicate,
+            object_val:   $object_val,
+            metric:       $metric,
+            direction:    $direction,
+            evidence_span: $evidence_span,
+            conditions:   $conditions
         })
         CREATE (c)-[:EXTRACTED_FROM]->(p)
         SET c.claim_id = elementId(c)
         RETURN elementId(c) AS claim_id
-    """, {
-        "arxiv_id": paper_id,
-        "text": claim_text,
-        "section": section,
-        "confidence": confidence,
-        "embedding_id": embedding_id or "",
-        "paper_year": paper_year
-    })
+    """, props)
     return result[0]["claim_id"] if result else None
+
 
 
 def get_all_claims() -> list[dict]:

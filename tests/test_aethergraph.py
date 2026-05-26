@@ -67,7 +67,7 @@ class TestLLM:
         import config as cfg
         cfg.LLM_PROVIDER = provider
 
-    @patch("llm.LLM_PROVIDER", "groq")
+    @patch("config.LLM_PROVIDER", "groq")
     def test_groq_dispatch(self):
         # Groq is imported inside call_llm body → patch at source package
         mock_client = MagicMock()
@@ -97,11 +97,11 @@ class TestLLM:
         import sys
         import llm as llm_mod
         with patch.dict(sys.modules, {"anthropic": mock_anthropic_module}), \
-             patch.object(llm_mod, "LLM_PROVIDER", "claude"):
+             patch.object(llm_mod.config, "LLM_PROVIDER", "claude"):
             result = llm_mod.call_llm("test prompt")
         assert result == "answer"
 
-    @patch("llm.LLM_PROVIDER", "groq")
+    @patch("config.LLM_PROVIDER", "groq")
     @patch("llm.time.sleep")
     def test_rate_limit_retry(self, mock_sleep):
         """On rate-limit error, should wait and retry up to `retries` times."""
@@ -112,11 +112,11 @@ class TestLLM:
         import sys, importlib, llm as llm_mod
         with patch.dict(sys.modules, {"groq": mock_groq_module}):
             importlib.reload(llm_mod)
-            with pytest.raises(Exception, match="Max retries exceeded"):
+            with pytest.raises(Exception, match="All LLM providers exhausted"):
                 llm_mod.call_llm("test", retries=2)
         assert mock_sleep.call_count == 2
 
-    @patch("llm.LLM_PROVIDER", "groq")
+    @patch("config.LLM_PROVIDER", "groq")
     def test_non_rate_limit_error_raises_immediately(self):
         """Non-rate-limit exceptions should propagate without retry."""
         mock_client = MagicMock()
@@ -829,7 +829,7 @@ class TestStore:
     def test_find_similar_claims_shape(self):
         mock_col = MagicMock()
         mock_col.query.return_value = self._make_chroma_result(3)
-        with patch("embeddings.store.claims_col", mock_col):
+        with patch("embeddings.store._claims_col", return_value=mock_col):
             from embeddings.store import find_similar_claims
             results = find_similar_claims("some query", n_results=3)
         assert len(results) == 3
@@ -840,28 +840,18 @@ class TestStore:
             assert "distance" in r
 
     def test_add_claim_returns_doc_id(self):
-        # claims_col is bound at module-load time by a real ChromaDB client.
-        # patch() on the name works but the function body does:
-        #   claims_col.add(...)
-        # where claims_col is resolved via the module's __dict__ at call time.
-        # The reliable fix: patch the module attribute AND confirm via the
-        # module's own reference, not a local alias.
         import embeddings.store as store_mod
         mock_col = MagicMock()
-        original = store_mod.claims_col
-        store_mod.claims_col = mock_col
-        try:
+        with patch("embeddings.store._claims_col", return_value=mock_col):
             doc_id = store_mod.add_claim("abc123", "Some claim text",
                                          {"arxiv_id": "2301.00001"})
-        finally:
-            store_mod.claims_col = original
         assert doc_id == "claim_abc123"
-        mock_col.add.assert_called_once()
+        mock_col.upsert.assert_called_once()
 
     def test_find_similar_chunks_shape(self):
         mock_col = MagicMock()
         mock_col.query.return_value = self._make_chroma_result(2)
-        with patch("embeddings.store.chunks_col", mock_col):
+        with patch("embeddings.store._chunks_col", return_value=mock_col):
             from embeddings.store import find_similar_chunks
             results = find_similar_chunks("query text", n_results=2)
         assert len(results) == 2
@@ -1026,11 +1016,6 @@ class TestRegressions:
         """
         import embeddings.store as store_mod
         mock_col = MagicMock()
-        mock_col.add.side_effect = Exception("DuplicateIDError: ID already exists")
-        original = store_mod.chunks_col
-        store_mod.chunks_col = mock_col
-        try:
-            with pytest.raises(Exception, match="DuplicateIDError"):
-                store_mod.add_chunk("existing_chunk_id", "text", {})
-        finally:
-            store_mod.chunks_col = original
+        with patch("embeddings.store._chunks_col", return_value=mock_col):
+            store_mod.add_chunk("existing_chunk_id", "text", {})
+        mock_col.upsert.assert_called_once_with(documents=["text"], ids=["existing_chunk_id"], metadatas=[{}])

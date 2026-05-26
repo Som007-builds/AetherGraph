@@ -46,7 +46,7 @@ Return ONLY valid JSON, no other text:
 
 def make_plan(question: str) -> dict:
     prompt = PLANNER_PROMPT.format(question=question)
-    raw = call_llm(prompt, max_tokens=600)
+    raw = call_llm(prompt, max_tokens=600, context="planner")
 
     try:
         plan = json.loads(raw)

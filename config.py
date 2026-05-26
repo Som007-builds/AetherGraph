@@ -5,8 +5,6 @@ from pathlib import Path
 load_dotenv()
 
 # ─── LLM ─────────────────────────────────────────────────────
-USE_GEMINI = True
-
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 CLAUDE_MODEL = "claude-sonnet-4-20250514"
 
@@ -16,8 +14,16 @@ GEMINI_MODEL = "gemini-2.0-flash"
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_MODEL = "llama-3.1-8b-instant"
 
-# Switch: "groq", "gemini", or "claude"
+# Primary provider: "groq", "gemini", or "claude"
 LLM_PROVIDER = "groq"
+
+# Provider fallback chain — tried in order when the primary is rate-limited.
+# Set to a single-element list to disable fallback.
+LLM_PROVIDER_CHAIN = ["groq", "gemini"]
+
+# LLM cache: set to True to enable in-process response caching (saves API calls
+# for repeated identical prompts, e.g. during dev / repeated contradiction checks)
+LLM_CACHE_ENABLED = os.getenv("LLM_CACHE_ENABLED", "false").lower() == "true"
 
 # ─── Paths ───────────────────────────────────────────────────
 BASE_DIR = Path(__file__).parent

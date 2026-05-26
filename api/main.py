@@ -125,11 +125,75 @@ def get_claims(limit: int = 50, offset: int = 0):
             "base_confidence": c.get("base_confidence"),
             "arxiv_id": c.get("arxiv_id", ""),
             "paper_year": c.get("paper_year"),
-            "paper_title": c.get("paper_title")
+            "paper_title": c.get("paper_title"),
+            # Phase 7: provenance fields
+            "evidence_span": c.get("evidence_span", ""),
+            "subject": c.get("subject", ""),
+            "metric": c.get("metric", ""),
+            "direction": c.get("direction", ""),
         })
     return {
         "total": len(formatted_claims),
         "claims": formatted_claims[offset:offset + limit]
+    }
+
+
+# Phase 7: Provenance endpoint
+@app.get("/api/claims/{claim_id}/provenance")
+def get_claim_provenance(claim_id: str):
+    """
+    Return the full provenance chain for a single claim:
+    claim text, evidence_span, section, and the source paper metadata.
+    """
+    from graph.neo4j_client import run_query
+    result = run_query("""
+        MATCH (c:Claim) WHERE elementId(c) = $claim_id
+        MATCH (c)-[:EXTRACTED_FROM]->(p:Paper)
+        RETURN
+            elementId(c)        AS claim_id,
+            c.text              AS claim_text,
+            c.evidence_span     AS evidence_span,
+            c.section           AS section,
+            c.confidence        AS confidence,
+            c.subject           AS subject,
+            c.predicate         AS predicate,
+            c.object_val        AS object_val,
+            c.metric            AS metric,
+            c.direction         AS direction,
+            c.conditions        AS conditions,
+            p.arxiv_id          AS arxiv_id,
+            p.title             AS title,
+            p.authors           AS authors,
+            p.published         AS published,
+            p.citation_count    AS citation_count
+    """, {"claim_id": claim_id})
+
+    if not result:
+        raise HTTPException(status_code=404, detail=f"Claim '{claim_id}' not found.")
+
+    row = result[0]
+    return {
+        "claim_id":    row.get("claim_id"),
+        "claim_text":  row.get("claim_text"),
+        "evidence_span": row.get("evidence_span") or "",
+        "section":     row.get("section"),
+        "confidence":  row.get("confidence"),
+        "structured": {
+            "subject":    row.get("subject") or "",
+            "predicate":  row.get("predicate") or "",
+            "object_val": row.get("object_val") or "",
+            "metric":     row.get("metric") or "",
+            "direction":  row.get("direction") or "unclear",
+            "conditions": row.get("conditions") or "{}",
+        },
+        "paper": {
+            "arxiv_id":       row.get("arxiv_id"),
+            "title":          row.get("title"),
+            "authors":        row.get("authors") or [],
+            "published":      row.get("published"),
+            "citation_count": row.get("citation_count"),
+            "url":            f"https://arxiv.org/abs/{row.get('arxiv_id')}",
+        },
     }
 
 
@@ -617,3 +681,33 @@ def health():
         "chromadb": chromadb_status,
         "claims": claims_count
     }
+
+
+# ─── Metrics (Phase 9) ───────────────────────────────────────────────────────
+
+@app.get("/api/metrics")
+def get_metrics():
+    """
+    Production observability endpoint.
+    Returns aggregated metrics for LLM calls, ingestion runs,
+    contradiction detection, and graph writes.
+    Also includes LLM cache statistics if caching is enabled.
+    """
+    try:
+        from utils.metrics import metrics
+        summary = metrics.get_summary()
+    except Exception as e:
+        summary = {"error": str(e)}
+
+    # Attach LLM cache stats if cache is active
+    try:
+        import config as _config
+        if _config.LLM_CACHE_ENABLED:
+            from utils.llm_cache import cache_stats
+            summary["llm_cache"] = cache_stats()
+        else:
+            summary["llm_cache"] = {"enabled": False}
+    except Exception:
+        pass
+
+    return summary

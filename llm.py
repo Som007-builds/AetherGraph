@@ -1,52 +1,213 @@
+# llm.py
+"""
+Resilient LLM call router for AXION.
+
+Phase 3 upgrades:
+  - Exponential backoff with jitter on rate limits (replaces fixed 60s/120s/180s sleep)
+  - Provider fallback chain: if primary is exhausted, try next provider
+  - Optional in-process cache (LLM_CACHE_ENABLED=true in .env)
+  - Per-call timing via LLMCallTimer
+  - Metrics integration (rate_limit_events, call latency)
+  - Improved rate-limit detection covering all three provider error formats
+"""
+
+from __future__ import annotations
+
+import logging
+import random
 import time
+
 import config
-from config import GROQ_API_KEY, GROQ_MODEL
-from config import GEMINI_API_KEY, GEMINI_MODEL
-from config import ANTHROPIC_API_KEY, CLAUDE_MODEL
+from config import (
+    ANTHROPIC_API_KEY, CLAUDE_MODEL,
+    GEMINI_API_KEY, GEMINI_MODEL,
+    GROQ_API_KEY, GROQ_MODEL,
+    LLM_PROVIDER_CHAIN, LLM_CACHE_ENABLED,
+)
 
-if "LLM_PROVIDER" not in globals():
-    LLM_PROVIDER = config.LLM_PROVIDER
+logger = logging.getLogger(__name__)
+
+# Exponential back-off: attempt index → seconds to wait before retry.
+# Jitter of ±3 seconds is added per attempt to avoid thundering-herd.
+_RETRY_DELAYS = [5, 15, 45, 120, 300]
 
 
-def call_llm(prompt: str, max_tokens: int = 1500, retries: int = 3) -> str:
-    provider = globals().get("LLM_PROVIDER", config.LLM_PROVIDER)
-    for attempt in range(retries):
-        try:
-            if provider == "groq":
-                from groq import Groq
-                client = Groq(api_key=GROQ_API_KEY)
-                response = client.chat.completions.create(
-                    model=GROQ_MODEL,
-                    max_tokens=max_tokens,
-                    messages=[{"role": "user", "content": prompt}]
+# ─── Rate-limit detection ─────────────────────────────────────────────────────
+
+def _is_rate_limit(exc: Exception) -> bool:
+    """Return True if exception looks like a provider rate-limit error."""
+    msg = str(exc).lower()
+    return any(
+        kw in msg for kw in (
+            "rate_limit", "rate limit", "ratelimit",
+            "429", "too many requests",
+            "quota", "resource_exhausted",
+        )
+    )
+
+
+# ─── Per-provider call implementations ───────────────────────────────────────
+
+def _call_groq(prompt: str, max_tokens: int) -> str:
+    from groq import Groq
+    client = Groq(api_key=GROQ_API_KEY)
+    response = client.chat.completions.create(
+        model=GROQ_MODEL,
+        max_tokens=max_tokens,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return response.choices[0].message.content.strip()
+
+
+def _call_gemini(prompt: str, max_tokens: int) -> str:
+    from google import genai
+    client = genai.Client(api_key=GEMINI_API_KEY)
+    response = client.models.generate_content(
+        model=GEMINI_MODEL,
+        contents=prompt,
+    )
+    return response.text.strip()
+
+
+def _call_claude(prompt: str, max_tokens: int) -> str:
+    import anthropic
+    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+    response = client.messages.create(
+        model=CLAUDE_MODEL,
+        max_tokens=max_tokens,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return response.content[0].text.strip()
+
+
+_PROVIDERS = {
+    "groq":   _call_groq,
+    "gemini": _call_gemini,
+    "claude": _call_claude,
+}
+
+
+# ─── Main entry point ─────────────────────────────────────────────────────────
+
+def call_llm(
+    prompt: str,
+    max_tokens: int = 1500,
+    retries: int = 5,
+    context: str = "",
+) -> str:
+    """
+    Route a prompt through the configured LLM provider chain.
+
+    Args:
+        prompt:     The prompt string.
+        max_tokens: Maximum tokens for the response.
+        retries:    How many times to retry per provider before moving to the next.
+        context:    Optional tag for log messages (e.g. "reader.extract_claims").
+
+    Returns:
+        The LLM response as a stripped string.
+
+    Raises:
+        Exception: When all providers in the chain are exhausted after retries.
+    """
+    # ── Optional cache lookup ─────────────────────────────────────────────────
+    if LLM_CACHE_ENABLED:
+        from utils.llm_cache import get_cached, set_cached
+        primary = config.LLM_PROVIDER
+        cached = get_cached(primary, prompt)
+        if cached is not None:
+            return cached
+
+    # ── Metrics import (lazy, won't fail if metrics module unavailable) ───────
+    try:
+        from utils.metrics import metrics as _metrics
+    except Exception:
+        _metrics = None
+
+    tag = f"[llm:{context}]" if context else "[llm]"
+
+    # Build the provider list: primary first, then remaining from chain
+    primary = config.LLM_PROVIDER
+    chain = list(LLM_PROVIDER_CHAIN) if LLM_PROVIDER_CHAIN else [primary]
+    if primary not in chain:
+        chain.insert(0, primary)
+
+    # ── Provider fallback loop ────────────────────────────────────────────────
+    for provider in chain:
+        caller = _PROVIDERS.get(provider)
+        if caller is None:
+            logger.warning(f"{tag} Unknown provider '{provider}', skipping.")
+            continue
+
+        for attempt in range(retries):
+            t0 = time.perf_counter()
+            try:
+                result = caller(prompt, max_tokens)
+                elapsed_ms = (time.perf_counter() - t0) * 1000
+
+                logger.debug(
+                    f"{tag} [{provider}] call completed in {elapsed_ms:.0f}ms"
                 )
-                return response.choices[0].message.content.strip()
 
-            elif LLM_PROVIDER == "gemini":
-                from google import genai
-                client = genai.Client(api_key=GEMINI_API_KEY)
-                response = client.models.generate_content(
-                    model=GEMINI_MODEL,
-                    contents=prompt
-                )
-                return response.text.strip()
+                if _metrics:
+                    _metrics.record_llm_call(
+                        provider=provider,
+                        duration_ms=elapsed_ms,
+                        success=True,
+                    )
 
-            elif LLM_PROVIDER == "claude":
-                import anthropic
-                client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-                response = client.messages.create(
-                    model=CLAUDE_MODEL,
-                    max_tokens=max_tokens,
-                    messages=[{"role": "user", "content": prompt}]
-                )
-                return response.content[0].text.strip()
+                # ── Cache store ───────────────────────────────────────────────
+                if LLM_CACHE_ENABLED:
+                    set_cached(provider, prompt, result)
 
-        except Exception as e:
-            if "rate_limit" in str(e).lower() or "429" in str(e):
-                wait = 60 * (attempt + 1)
-                print(f"  Rate limit hit. Waiting {wait}s before retry {attempt+1}/{retries}...")
-                time.sleep(wait)
-            else:
-                raise e
+                return result
 
-    raise Exception("Max retries exceeded due to rate limiting.")
+            except Exception as exc:
+                elapsed_ms = (time.perf_counter() - t0) * 1000
+
+                if _is_rate_limit(exc):
+                    if _metrics:
+                        _metrics.record_rate_limit(provider)
+
+                    if attempt < retries - 1:
+                        base_delay = _RETRY_DELAYS[min(attempt, len(_RETRY_DELAYS) - 1)]
+                        jitter = random.uniform(-3.0, 3.0)
+                        delay = max(1.0, base_delay + jitter)
+                        logger.warning(
+                            f"{tag} [{provider}] Rate-limited. "
+                            f"Retry {attempt + 1}/{retries} in {delay:.0f}s…"
+                        )
+                        time.sleep(delay)
+                        continue
+                    else:
+                        logger.warning(
+                            f"{tag} [{provider}] Rate-limit retries exhausted "
+                            f"({retries} attempts). Trying next provider."
+                        )
+                        if _metrics:
+                            _metrics.record_llm_call(
+                                provider=provider,
+                                duration_ms=elapsed_ms,
+                                success=False,
+                                rate_limited=True,
+                            )
+                        break   # move to next provider
+
+                else:
+                    # Non-rate-limit error: fail fast (don't retry with same provider)
+                    logger.error(
+                        f"{tag} [{provider}] Non-retriable error: {exc}"
+                    )
+                    if _metrics:
+                        _metrics.record_llm_call(
+                            provider=provider,
+                            duration_ms=elapsed_ms,
+                            success=False,
+                        )
+                    raise
+
+    raise Exception(
+        f"All LLM providers exhausted after retries. "
+        f"Chain tried: {chain}. "
+        f"Consider checking API keys or rate limit quotas."
+    )
