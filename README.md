@@ -1,4 +1,4 @@
-# AetherGraph
+# Axion
 
 A multi-agent scientific intelligence system that reads AI research papers,
 extracts empirical claims, detects contradictions between papers, and surfaces
@@ -9,7 +9,7 @@ Two papers can agree on a topic but contradict each other on a specific finding.
 Standard search engines can't detect that. AetherGraph can — and it compounds
 what it learns over time.
 
-[![Demo Video](https://img.shields.io/badge/Demo-Watch%20Now-red?style=for-the-badge&logo=youtube)](YOUR_VIDEO_LINK)
+
 [![Technical Spec](https://img.shields.io/badge/Spec-AXION%20v2.30-blue?style=for-the-badge)](./AXION_SPEC.md)
 
 ---
@@ -232,7 +232,7 @@ confidence system, and long-term vision.
 
 ## Built By
 
-Somnath — 1st year BTech, 2nd semester.  
+Soham Singh — 1st year BTech, 2nd semester.  
 Built over 2 months as a solo project.
 
 ---
